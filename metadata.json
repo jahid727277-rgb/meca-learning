@@ -1,0 +1,8 @@
+{
+  "name": "Meca Learning",
+  "description": "A professional and interactive online learning platform featuring course catalogs, student dashboard, interactive classroom player, and progress tracking, with a pristine light red accent aesthetic.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
