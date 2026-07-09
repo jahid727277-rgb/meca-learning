@@ -12,14 +12,14 @@ import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
 import { getDatabase, ref, set as rtdbSet, get as rtdbGet } from "firebase/database";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCw12hW5NlxuMt2av2i5C23Ky-YWg2_mis",
-  authDomain: "my-smart-controll-system.firebaseapp.com",
-  databaseURL: "https://my-smart-controll-system-default-rtdb.firebaseio.com",
-  projectId: "my-smart-controll-system",
-  storageBucket: "my-smart-controll-system.firebasestorage.app",
-  messagingSenderId: "386170436080",
-  appId: "1:386170436080:web:3dca02bb3b6e74ac140535",
-  measurementId: "G-51RV7LB6ZX"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyCw12hW5NlxuMt2av2i5C23Ky-YWg2_mis",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "my-smart-controll-system.firebaseapp.com",
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || "https://my-smart-controll-system-default-rtdb.firebaseio.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "my-smart-controll-system",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "my-smart-controll-system.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "386170436080",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:386170436080:web:3dca02bb3b6e74ac140535",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-51RV7LB6ZX"
 };
 
 // Initialize Firebase
