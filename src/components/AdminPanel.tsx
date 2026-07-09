@@ -363,14 +363,12 @@ export default function AdminPanel({
               <span className="text-[9px] font-black uppercase tracking-wider text-neutral-400 block">বর্তমান লোগো প্রিভিউ:</span>
               <div className="p-4 rounded-xl bg-neutral-900 inline-flex items-center justify-center">
                 <img 
-                  src={brandingLogo && !brandingLogo.includes('cloudinary.com') && brandingLogo !== 'https://res.cloudinary.com/djjhol6dg/image/upload/v1783518180/20260708_194111_pcs7uw.png' ? brandingLogo : '/meca_learning_logo.png'} 
+                  src={brandingLogo && !brandingLogo.includes('cloudinary.com') && brandingLogo !== 'https://res.cloudinary.com/djjhol6dg/image/upload/v1783518180/20260708_194111_pcs7uw.png' ? brandingLogo : mecaLogo} 
                   alt="Logo Preview" 
                   className="h-10 w-auto object-contain max-w-full"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
-                    if (target.src !== '/meca_learning_logo.png') {
-                      target.src = '/meca_learning_logo.png';
-                    } else if (target.src !== mecaLogo) {
+                    if (target.src !== mecaLogo) {
                       target.src = mecaLogo;
                     }
                   }}
