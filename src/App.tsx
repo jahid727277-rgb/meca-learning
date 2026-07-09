@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Logo from './components/Logo';
+import mecaLogo from './assets/images/meca_learning_logo.png';
 import CourseCatalog from './components/CourseCatalog';
 import StudentDashboard from './components/StudentDashboard';
 import Classroom from './components/Classroom';
@@ -63,7 +64,7 @@ export default function App() {
 
   // Dynamic courses and branding configurations loaded from Firebase Realtime Database
   const [courses, setCourses] = useState<Course[]>(COURSES);
-  const [logoUrl, setLogoUrl] = useState<string>('https://res.cloudinary.com/djjhol6dg/image/upload/v1783518180/20260708_194111_pcs7uw.png');
+  const [logoUrl, setLogoUrl] = useState<string>('/meca_learning_logo.png');
   const [coursesLoading, setCoursesLoading] = useState<boolean>(true);
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
 
@@ -553,8 +554,8 @@ export default function App() {
                       await saveCoursesToDB(COURSES);
                       setCourses(COURSES);
                       // Reset logo config
-                      await saveImageConfigs({ logoUrl: "https://res.cloudinary.com/djjhol6dg/image/upload/v1783518180/20260708_194111_pcs7uw.png" });
-                      setLogoUrl("https://res.cloudinary.com/djjhol6dg/image/upload/v1783518180/20260708_194111_pcs7uw.png");
+                      await saveImageConfigs({ logoUrl: "" });
+                      setLogoUrl("");
                     } catch (e) {
                       console.error("Error resetting Realtime Database:", e);
                       throw e;
