@@ -66,7 +66,7 @@ export default function App() {
 
   // Dynamic courses and branding configurations loaded from Firebase Realtime Database
   const [courses, setCourses] = useState<Course[]>(COURSES);
-  const [logoUrl, setLogoUrl] = useState<string>('/meca_learning_logo.png');
+  const [logoUrl, setLogoUrl] = useState<string>('https://res.cloudinary.com/djjhol6dg/image/upload/v1783518180/20260708_194111_pcs7uw.png');
   const [coursesLoading, setCoursesLoading] = useState<boolean>(true);
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
 

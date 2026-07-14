@@ -7,7 +7,7 @@ interface LogoProps {
   logoUrl?: string;
 }
 
-const DEFAULT_LOGO_PATH = '/meca_learning_logo.png';
+const DEFAULT_LOGO_PATH = 'https://res.cloudinary.com/djjhol6dg/image/upload/v1783518180/20260708_194111_pcs7uw.png';
 
 export default function Logo({ className = '', size = 42, variant = 'orange', logoUrl }: LogoProps) {
   // If there's a custom logoUrl uploaded by the user that is not a placeholder/local fallback,
