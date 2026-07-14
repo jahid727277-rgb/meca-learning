@@ -57,6 +57,9 @@ const DEFAULT_PROGRESS: UserProgress = {
 
 export default function App() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
+  const ADMIN_EMAILS = ['jahid1882008@gmail.com', 'mecalearning@gmail.com'];
+  const isAdmin = user !== null && ADMIN_EMAILS.includes(user.email || '');
+
   const [authLoading, setAuthLoading] = useState<boolean>(true);
   const [authError, setAuthError] = useState<string | null>(null);
   const [copiedDomain, setCopiedDomain] = useState<string | null>(null);
@@ -365,6 +368,7 @@ export default function App() {
         onSignIn={() => setShowAuthModal(true)}
         onSignOut={logoutUser}
         logoUrl={logoUrl}
+        isAdmin={isAdmin}
       />
 
       {/* 2. DYNAMIC CONTENT MAIN ROUTING */}
@@ -526,7 +530,7 @@ export default function App() {
             )}
 
             {/* VIEW E: ADMIN CONSOLE */}
-            {currentView === 'admin' && (
+            {currentView === 'admin' && isAdmin && (
               <div className="animate-fadeIn">
                 <AdminPanel
                   courses={courses}

@@ -11,6 +11,7 @@ interface NavbarProps {
   onSignIn: () => void;
   onSignOut: () => void;
   logoUrl?: string;
+  isAdmin?: boolean;
 }
 
 export default function Navbar({ 
@@ -21,7 +22,8 @@ export default function Navbar({
   user,
   onSignIn,
   onSignOut,
-  logoUrl
+  logoUrl,
+  isAdmin = false
 }: NavbarProps) {
   const navItems = [
     { id: 'explore', label: 'Explore Courses', icon: Compass },
@@ -76,17 +78,19 @@ export default function Navbar({
 
           {user ? (
             <div className="flex items-center gap-3">
-              {/* Admin Panel button */}
-              <button
-                onClick={() => onNavigate('admin')}
-                className={`text-[10px] uppercase tracking-wider font-extrabold px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                  currentView === 'admin' 
-                    ? 'text-orange-600 bg-orange-50 font-black border border-orange-100/50' 
-                    : 'text-neutral-500 hover:text-orange-600 hover:bg-neutral-50'
-                }`}
-              >
-                Admin Panel
-              </button>
+               {/* Admin Panel button */}
+              {isAdmin && (
+                <button
+                  onClick={() => onNavigate('admin')}
+                  className={`text-[10px] uppercase tracking-wider font-extrabold px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                    currentView === 'admin' 
+                      ? 'text-orange-600 bg-orange-50 font-black border border-orange-100/50' 
+                      : 'text-neutral-500 hover:text-orange-600 hover:bg-neutral-50'
+                  }`}
+                >
+                  Admin Panel
+                </button>
+              )}
 
               <button 
                 onClick={() => onNavigate('dashboard')}
