@@ -7,7 +7,7 @@ interface LogoProps {
   logoUrl?: string;
 }
 
-const DEFAULT_LOGO_PATH = '/meca_learning_logo.png';
+const DEFAULT_LOGO_PATH = 'meca_learning_logo.png';
 
 export default function Logo({ className = '', size = 42, variant = 'orange', logoUrl }: LogoProps) {
   // If there's a custom logoUrl uploaded by the user that is not a placeholder/local fallback,
@@ -15,6 +15,8 @@ export default function Logo({ className = '', size = 42, variant = 'orange', lo
   const hasCustomLogo = logoUrl && 
                         logoUrl !== '' && 
                         logoUrl !== DEFAULT_LOGO_PATH && 
+                        logoUrl !== '/meca_learning_logo.png' &&
+                        logoUrl !== 'meca_learning_logo.png' &&
                         !logoUrl.includes('cloudinary.com');
 
   const currentLogo = hasCustomLogo ? logoUrl : DEFAULT_LOGO_PATH;
