@@ -1,5 +1,4 @@
 import React from 'react';
-import mecaLogo from '../assets/images/meca_learning_logo.png';
 
 interface LogoProps {
   className?: string;
@@ -8,15 +7,17 @@ interface LogoProps {
   logoUrl?: string;
 }
 
+const DEFAULT_LOGO_PATH = '/meca_learning_logo.png';
+
 export default function Logo({ className = '', size = 42, variant = 'orange', logoUrl }: LogoProps) {
   // If there's a custom logoUrl uploaded by the user that is not a placeholder/local fallback,
-  // we can render it. Otherwise, we render the imported local logo.
+  // we can render it. Otherwise, we render the public folder logo.
   const hasCustomLogo = logoUrl && 
                         logoUrl !== '' && 
-                        logoUrl !== '/meca_learning_logo.png' && 
+                        logoUrl !== DEFAULT_LOGO_PATH && 
                         !logoUrl.includes('cloudinary.com');
 
-  const currentLogo = hasCustomLogo ? logoUrl : mecaLogo;
+  const currentLogo = hasCustomLogo ? logoUrl : DEFAULT_LOGO_PATH;
 
   // Since the logo is dark/black, inverting it makes it white for dark footers.
   const filterStyle = variant === 'white' ? { filter: 'brightness(0) invert(1)' } : undefined;
@@ -31,8 +32,8 @@ export default function Logo({ className = '', size = 42, variant = 'orange', lo
         referrerPolicy="no-referrer"
         onError={(e) => {
           const target = e.target as HTMLImageElement;
-          if (target.src !== mecaLogo) {
-            target.src = mecaLogo;
+          if (target.src !== DEFAULT_LOGO_PATH) {
+            target.src = DEFAULT_LOGO_PATH;
           }
         }}
       />
