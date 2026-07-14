@@ -1,4 +1,5 @@
 import React from 'react';
+import mecaLearningLogo from '../assets/images/meca_learning_logo.png';
 
 interface LogoProps {
   className?: string;
@@ -7,7 +8,7 @@ interface LogoProps {
   logoUrl?: string;
 }
 
-const DEFAULT_LOGO_PATH = 'meca_learning_logo.png';
+const DEFAULT_LOGO_PATH = mecaLearningLogo;
 
 export default function Logo({ className = '', size = 42, variant = 'orange', logoUrl }: LogoProps) {
   // If there's a custom logoUrl uploaded by the user that is not a placeholder/local fallback,
@@ -17,7 +18,7 @@ export default function Logo({ className = '', size = 42, variant = 'orange', lo
                         logoUrl !== DEFAULT_LOGO_PATH && 
                         logoUrl !== '/meca_learning_logo.png' &&
                         logoUrl !== 'meca_learning_logo.png' &&
-                        !logoUrl.includes('cloudinary.com');
+                        !logoUrl.includes('meca_learning_logo');
 
   const currentLogo = hasCustomLogo ? logoUrl : DEFAULT_LOGO_PATH;
 

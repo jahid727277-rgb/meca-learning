@@ -6,6 +6,7 @@ import CourseCatalog from './components/CourseCatalog';
 import StudentDashboard from './components/StudentDashboard';
 import Classroom from './components/Classroom';
 import ReviewSection from './components/ReviewSection';
+import mecaLearningLogo from './assets/images/meca_learning_logo.png';
 import { COURSES, REVIEWS } from './data/courses';
 import { UserProgress, Enrollment, Course, Review } from './types';
 import { formatBDTPrice } from './utils/currency';
@@ -66,7 +67,7 @@ export default function App() {
 
   // Dynamic courses and branding configurations loaded from Firebase Realtime Database
   const [courses, setCourses] = useState<Course[]>(COURSES);
-  const [logoUrl, setLogoUrl] = useState<string>('meca_learning_logo.png');
+  const [logoUrl, setLogoUrl] = useState<string>(mecaLearningLogo);
   const [coursesLoading, setCoursesLoading] = useState<boolean>(true);
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
 
