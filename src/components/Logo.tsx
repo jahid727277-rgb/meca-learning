@@ -1,5 +1,4 @@
 import React from 'react';
-import mecaLearningLogo from '../assets/images/meca_learning_logo.png';
 
 interface LogoProps {
   className?: string;
@@ -8,7 +7,7 @@ interface LogoProps {
   logoUrl?: string;
 }
 
-const DEFAULT_LOGO_PATH = mecaLearningLogo;
+const DEFAULT_LOGO_PATH = '/meca_learning_logo.png';
 
 export default function Logo({ className = '', size = 42, variant = 'orange', logoUrl }: LogoProps) {
   // If there's a custom logoUrl uploaded by the user that is not a placeholder/local fallback,
