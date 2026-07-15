@@ -37,7 +37,7 @@ export default function Footer({ onNavigate }: FooterProps) {
         {/* Top Section */}
         <div className="flex flex-col items-center gap-2">
           <img 
-            src="https://res.cloudinary.com/djjhol6dg/image/upload/v1784080493/meca_learning_logo_a3yqec.png" 
+            src="/logo.png" 
             className="w-48 h-20 brightness-0 invert object-contain" 
             alt="Meca Learning" 
           />
