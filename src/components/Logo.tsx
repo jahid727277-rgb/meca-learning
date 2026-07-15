@@ -1,6 +1,6 @@
 import React from 'react';
 
-const mecaLearningLogo = 'https://res.cloudinary.com/djjhol6dg/image/upload/v1784080493/meca_learning_logo_a3yqec.png';
+const mecaLearningLogo = '/logo_web.png';
 
 interface LogoProps {
   className?: string;
@@ -15,6 +15,7 @@ export default function Logo({ className = '', imgClassName = '', size = 42, var
   // we can render it. Otherwise, we render the imported logo asset.
   const hasCustomLogo = logoUrl && 
                         logoUrl !== '' && 
+                        logoUrl !== mecaLearningLogo &&
                         logoUrl !== 'meca_learning_logo.png' && 
                         logoUrl !== '/meca_learning_logo.png' &&
                         logoUrl !== './meca_learning_logo.png' &&

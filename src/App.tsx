@@ -29,7 +29,7 @@ import AuthModal from './components/AuthModal';
 import Footer, { footerContent } from './components/Footer';
 import AdminPanel from './components/AdminPanel';
 
-const mecaLearningLogo = 'https://res.cloudinary.com/djjhol6dg/image/upload/v1784080493/meca_learning_logo_a3yqec.png';
+const mecaLearningLogo = '/logo_web.png';
 
 const LOCAL_STORAGE_KEY = 'meca_learning_progress_v1';
 const REVIEWS_STORAGE_KEY = 'meca_learning_reviews_v1';
@@ -146,17 +146,9 @@ export default function App() {
       try {
         // 1. Get branding configurations
         const configs = await getImageConfigs();
+        setLogoUrl(mecaLearningLogo);
         if (configs && configs.logoUrl) {
-          if (
-            configs.logoUrl !== 'https://res.cloudinary.com/djjhol6dg/image/upload/v1783518180/20260708_194111_pcs7uw.png' &&
-            configs.logoUrl !== '' &&
-            configs.logoUrl !== 'meca_learning_logo.png' &&
-            configs.logoUrl !== '/meca_learning_logo.png'
-          ) {
-            setLogoUrl(configs.logoUrl);
-          } else {
-            setLogoUrl(mecaLearningLogo);
-          }
+          // Keep other configs if needed, but not logoUrl
         }
 
         // 2. Get mechatronics courses
@@ -373,12 +365,13 @@ export default function App() {
     .filter((item) => item.course !== undefined) as { enrollment: Enrollment; course: Course }[];
 
   return (
-    <div className="min-h-screen bg-white text-neutral-800 font-sans flex flex-col justify-between">
+    <div className="min-h-screen bg-white text-neutral-800 font-sans flex flex-col">
       
       {/* 1. BRAND NAVIGATION HEADER */}
       <Navbar
         currentView={currentView}
         onNavigate={(view) => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
           setCurrentView(view);
           setSelectedCourseId(null); // Reset detail subviews on nav shift
         }}
@@ -838,7 +831,10 @@ export default function App() {
       </main>
 
       {/* 3. PROFESSIONAL SUB-FOOTER */}
-      <Footer onNavigate={setCurrentView} />
+      <Footer onNavigate={(view) => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setCurrentView(view);
+      }} />
 
       {/* AUTHENTICATION ERROR MODAL */}
       {authError && (

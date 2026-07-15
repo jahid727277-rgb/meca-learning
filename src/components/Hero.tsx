@@ -69,25 +69,6 @@ export default function Hero({ onSearch, onExploreClick }: HeroProps) {
           </form>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 max-w-5xl mx-auto mt-4 bg-white/60 backdrop-blur-sm p-6 sm:p-8 rounded-3xl border border-orange-100/50 shadow-xs">
-          {stats.map((stat, i) => {
-            const Icon = stat.icon;
-            return (
-              <div key={i} className="flex flex-col items-center justify-center text-center p-3 sm:p-4 rounded-2xl hover:bg-orange-50/20 transition-colors">
-                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-orange-50 text-orange-600 mb-2.5">
-                  <Icon className="w-5 h-5" />
-                </div>
-                <span className="text-2xl sm:text-3xl font-extrabold text-neutral-900 tracking-tight">
-                  {stat.value}
-                </span>
-                <span className="text-xs text-neutral-500 font-medium mt-0.5">
-                  {stat.label}
-                </span>
-              </div>
-            );
-          })}
-        </div>
       </div>
     </section>
   );
