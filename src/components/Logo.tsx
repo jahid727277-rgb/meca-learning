@@ -4,12 +4,13 @@ const mecaLearningLogo = 'https://res.cloudinary.com/djjhol6dg/image/upload/v178
 
 interface LogoProps {
   className?: string;
+  imgClassName?: string;
   size?: number;
   variant?: 'orange' | 'dark' | 'white';
   logoUrl?: string;
 }
 
-export default function Logo({ className = '', size = 42, variant = 'orange', logoUrl }: LogoProps) {
+export default function Logo({ className = '', imgClassName = '', size = 42, variant = 'orange', logoUrl }: LogoProps) {
   // If there's a custom logoUrl uploaded by the user that is not a placeholder/local fallback,
   // we can render it. Otherwise, we render the imported logo asset.
   const hasCustomLogo = logoUrl && 
@@ -30,7 +31,7 @@ export default function Logo({ className = '', size = 42, variant = 'orange', lo
         src={currentLogo}
         alt="Meca Learning"
         style={{ height: size, width: 'auto', ...filterStyle }}
-        className="object-contain select-none max-w-full"
+        className={`object-contain select-none max-w-full ${imgClassName}`}
         referrerPolicy="no-referrer"
         onError={(e) => {
           const target = e.target as HTMLImageElement;
