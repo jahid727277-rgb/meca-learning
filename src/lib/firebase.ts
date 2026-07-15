@@ -53,6 +53,11 @@ export async function logoutUser() {
 
 // Data Synchronization Helpers
 export async function saveUserProgress(userId: string, progressData: any) {
+  // First save locally to localStorage so progress is never lost even if client is offline
+  try {
+    localStorage.setItem(`meca_progress_${userId}`, JSON.stringify(progressData));
+  } catch (e) {}
+
   try {
     // Save to Firestore for structured records
     const userDocRef = doc(db, "users", userId);
@@ -67,8 +72,12 @@ export async function saveUserProgress(userId: string, progressData: any) {
       ...progressData,
       updatedAt: new Date().toISOString()
     });
-  } catch (error) {
-    console.error("Error saving user progress to Firebase:", error);
+  } catch (error: any) {
+    if (error && error.message && error.message.includes("offline")) {
+      console.warn("Firebase client is offline. Progress saved to local cache and will be synced later.");
+    } else {
+      console.warn("Error saving user progress to Firebase (saved to cache):", error?.message || error);
+    }
   }
 }
 
@@ -78,6 +87,9 @@ export async function getUserProgress(userId: string) {
     const userDocRef = doc(db, "users", userId);
     const docSnap = await getDoc(userDocRef);
     if (docSnap.exists() && docSnap.data().progress) {
+      try {
+        localStorage.setItem(`meca_progress_${userId}`, JSON.stringify(docSnap.data().progress));
+      } catch (e) {}
       return docSnap.data().progress;
     }
 
@@ -85,11 +97,27 @@ export async function getUserProgress(userId: string) {
     const rtdbRef = ref(rtdb, `users/${userId}/progress`);
     const rtdbSnap = await rtdbGet(rtdbRef);
     if (rtdbSnap.exists()) {
+      try {
+        localStorage.setItem(`meca_progress_${userId}`, JSON.stringify(rtdbSnap.val()));
+      } catch (e) {}
       return rtdbSnap.val();
     }
-  } catch (error) {
-    console.error("Error getting user progress from Firebase:", error);
+  } catch (error: any) {
+    if (error && error.message && error.message.includes("offline")) {
+      console.warn("Firebase client is offline. Using local cache fallback.");
+    } else {
+      console.warn("Error getting user progress from Firebase (using local fallback):", error?.message || error);
+    }
   }
+
+  // Fallback to local cache
+  try {
+    const cached = localStorage.getItem(`meca_progress_${userId}`);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+  } catch (e) {}
+
   return null;
 }
 
@@ -133,8 +161,12 @@ export async function getCoursesFromDB() {
         }));
       }
     }
-  } catch (error) {
-    console.error("Error getting courses from Firebase:", error);
+  } catch (error: any) {
+    if (error && error.message && error.message.includes("offline")) {
+      console.warn("Firebase client is offline. Unable to get courses from DB.");
+    } else {
+      console.warn("Error getting courses from Firebase:", error?.message || error);
+    }
   }
   return null;
 }
@@ -143,8 +175,12 @@ export async function saveCoursesToDB(courses: any[]) {
   try {
     const coursesRef = ref(rtdb, "courses");
     await rtdbSet(coursesRef, courses);
-  } catch (error) {
-    console.error("Error saving courses to Firebase:", error);
+  } catch (error: any) {
+    if (error && error.message && error.message.includes("offline")) {
+      console.warn("Firebase client is offline. Unable to save courses.");
+    } else {
+      console.warn("Error saving courses to Firebase:", error?.message || error);
+    }
     throw error;
   }
 }
@@ -157,8 +193,12 @@ export async function getImageConfigs() {
     if (snapshot.exists()) {
       return snapshot.val();
     }
-  } catch (error) {
-    console.error("Error reading image configs:", error);
+  } catch (error: any) {
+    if (error && error.message && error.message.includes("offline")) {
+      console.warn("Firebase client is offline. Unable to get image configs.");
+    } else {
+      console.warn("Error reading image configs:", error?.message || error);
+    }
   }
   return null;
 }
@@ -167,8 +207,12 @@ export async function saveImageConfigs(configs: any) {
   try {
     const imagesRef = ref(rtdb, "configs/images");
     await rtdbSet(imagesRef, configs);
-  } catch (error) {
-    console.error("Error saving image configs:", error);
+  } catch (error: any) {
+    if (error && error.message && error.message.includes("offline")) {
+      console.warn("Firebase client is offline. Unable to save image configs.");
+    } else {
+      console.warn("Error saving image configs:", error?.message || error);
+    }
     throw error;
   }
 }

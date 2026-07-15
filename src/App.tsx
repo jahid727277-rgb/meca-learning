@@ -125,8 +125,12 @@ export default function App() {
             // First time logging in, backup local progress to Firebase
             await saveUserProgress(currentUser.uid, progress);
           }
-        } catch (error) {
-          console.error("Error fetching user progress from Firebase:", error);
+        } catch (error: any) {
+          if (error && error.message && error.message.includes("offline")) {
+            console.warn("Firebase client is offline. Unable to fetch online progress.");
+          } else {
+            console.warn("Error fetching user progress from Firebase:", error?.message || error);
+          }
         }
       }
     });
@@ -167,8 +171,12 @@ export default function App() {
             setCourses(dbCourses);
           }
         }
-      } catch (err) {
-        console.error("Error loading courses/configs from Firebase Realtime Database:", err);
+      } catch (err: any) {
+        if (err && err.message && err.message.includes("offline")) {
+          console.warn("Firebase is offline. Loading offline configurations and defaults.");
+        } else {
+          console.warn("Error loading courses/configs from Firebase Realtime Database:", err?.message || err);
+        }
         // Fallback to static courses array if Firestore or RTDB is blocked
         setCourses(COURSES);
       } finally {
@@ -815,7 +823,7 @@ export default function App() {
           
           {/* Logo description */}
           <div className="md:col-span-5 space-y-4">
-            <Logo variant="white" size={36} logoUrl={logoUrl} />
+            <Logo variant="white" size={44} logoUrl={logoUrl} />
             <p className="text-[11px] leading-relaxed text-neutral-500 max-w-sm font-semibold">
               Meca Learning is a modern digital platform training professional engineers and software developers. 
               Gain certified hardware micro-controller programming and fullstack code practices instantly.
