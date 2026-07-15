@@ -89,7 +89,7 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-fadeIn text-neutral-800">
-      <div className="relative bg-white rounded-3xl max-w-md w-full shadow-2xl border border-neutral-100 overflow-hidden my-8 animate-scaleIn">
+      <div className="relative bg-white/70 backdrop-blur-lg rounded-3xl max-w-md w-full shadow-2xl border border-white/20 overflow-hidden my-8 animate-scaleIn">
         
         {/* Close Button */}
         <button 

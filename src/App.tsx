@@ -26,6 +26,7 @@ import {
 } from './lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import AuthModal from './components/AuthModal';
+import Footer, { footerContent } from './components/Footer';
 import AdminPanel from './components/AdminPanel';
 
 const mecaLearningLogo = 'https://res.cloudinary.com/djjhol6dg/image/upload/v1784080493/meca_learning_logo_a3yqec.png';
@@ -409,6 +410,14 @@ export default function App() {
         ) : (
           /* STANDARD DIRECTORIES */
           <>
+            {/* VIEW F: POLICY PAGES */}
+            {['about', 'privacy', 'terms', 'refund'].includes(currentView) && (
+              <div className="mx-auto max-w-3xl px-4 py-20 animate-fadeIn">
+                <h1 className="text-3xl font-bold mb-6">{footerContent[currentView as keyof typeof footerContent].title}</h1>
+                <p className="text-neutral-700 leading-relaxed whitespace-pre-line">{footerContent[currentView as keyof typeof footerContent].content}</p>
+              </div>
+            )}
+
             {/* VIEW A: EXPLORE HOME & CATALOG */}
             {currentView === 'explore' && !selectedCourseId && (
               <div className="animate-fadeIn">
@@ -829,48 +838,7 @@ export default function App() {
       </main>
 
       {/* 3. PROFESSIONAL SUB-FOOTER */}
-      <footer id="app-footer" className="bg-neutral-950 text-neutral-400 border-t border-neutral-900 py-12 px-4 sm:px-6 lg:px-8 mt-20">
-        <div className="mx-auto max-w-7xl grid grid-cols-1 md:grid-cols-12 gap-8 pb-8 border-b border-neutral-900 text-xs font-medium">
-          
-          {/* Logo description */}
-          <div className="md:col-span-5 space-y-4">
-            <Logo variant="white" size={40} logoUrl={logoUrl} />
-            <p className="text-[11px] leading-relaxed text-neutral-500 max-w-sm font-semibold">
-              Meca Learning is a modern digital platform training professional engineers and software developers. 
-              Gain certified hardware micro-controller programming and fullstack code practices instantly.
-            </p>
-          </div>
-
-          {/* Links Column */}
-          <div className="md:col-span-3 space-y-3.5">
-            <h4 className="text-xs font-black text-white uppercase tracking-wider">Academic Programs</h4>
-            <ul className="space-y-2 text-neutral-500 font-semibold text-[11px]">
-              <li><button onClick={() => { setCurrentView('explore'); setSelectedCourseId(null); }} className="hover:text-orange-400 text-left transition-colors">Mechatronics Engineering</button></li>
-              <li><button onClick={() => { setCurrentView('explore'); setSelectedCourseId(null); }} className="hover:text-orange-400 text-left transition-colors">Software Architecture</button></li>
-              <li><button onClick={() => { setCurrentView('explore'); setSelectedCourseId(null); }} className="hover:text-orange-400 text-left transition-colors">Neural AI Systems</button></li>
-              <li><button onClick={() => { setCurrentView('explore'); setSelectedCourseId(null); }} className="hover:text-orange-400 text-left transition-colors">UI Design & Typography</button></li>
-            </ul>
-          </div>
-
-          {/* Help Column */}
-          <div className="md:col-span-4 space-y-3.5">
-            <h4 className="text-xs font-black text-white uppercase tracking-wider">Verified Credential Authority</h4>
-            <p className="text-[11px] text-neutral-500 leading-relaxed font-semibold">
-              All graduation certificates generated on Meca Learning are verified and shareable with LinkedIn, recruiters, and academic institutions worldwide.
-            </p>
-          </div>
-
-        </div>
-
-        <div className="mx-auto max-w-7xl pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] text-neutral-600 font-semibold">
-          <span>&copy; {new Date().getFullYear()} Meca Learning Inc. All rights reserved.</span>
-          <div className="flex gap-4">
-            <a href="#" className="hover:text-neutral-500 transition-colors">Privacy Terms</a>
-            <a href="#" className="hover:text-neutral-500 transition-colors">Institutional Licenses</a>
-            <a href="#" className="hover:text-neutral-500 transition-colors">Durable Credentials</a>
-          </div>
-        </div>
-      </footer>
+      <Footer onNavigate={setCurrentView} />
 
       {/* AUTHENTICATION ERROR MODAL */}
       {authError && (
