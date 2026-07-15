@@ -6,7 +6,8 @@ import PlyrPlayer from './PlyrPlayer';
 import { formatBDTPrice } from '../utils/currency';
 import { 
   Plus, Edit3, Trash2, Image, Link, Play, FileText, HelpCircle, 
-  Save, RotateCcw, ShieldAlert, Check, CheckCircle, ArrowRight, Eye
+  Save, RotateCcw, ShieldAlert, Check, CheckCircle, ArrowRight, Eye, EyeOff,
+  Github, GitBranch, GitCommit, CloudLightning, RefreshCw, AlertCircle, Copy, Download
 } from 'lucide-react';
 
 interface AdminPanelProps {
@@ -26,7 +27,7 @@ export default function AdminPanel({
   onResetDatabase,
   userEmail
 }: AdminPanelProps) {
-  const [activeTab, setActiveTab] = useState<'courses' | 'branding'>('courses');
+  const [activeTab, setActiveTab] = useState<'courses' | 'branding' | 'github'>('courses');
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
@@ -36,7 +37,7 @@ export default function AdminPanel({
   // New course / edit form states
   const [formTitle, setFormTitle] = useState('');
   const [formDescription, setFormDescription] = useState('');
-  const [formCategory, setFormCategory] = useState('Mechatronics');
+  const [formCategory, setFormCategory] = useState('Prompt Engineering');
   const [formLevel, setFormLevel] = useState<Level>('Beginner');
   const [formPrice, setFormPrice] = useState(49.99);
   const [formThumbnail, setFormThumbnail] = useState('');
@@ -66,6 +67,141 @@ export default function AdminPanel({
 
   // Branding states
   const [brandingLogo, setBrandingLogo] = useState(logoUrl);
+
+  // GitHub states
+  const [githubToken, setGithubToken] = useState(() => localStorage.getItem('meca_github_token') || '');
+  const [githubRepo, setGithubRepo] = useState(() => localStorage.getItem('meca_github_repo') || '');
+  const [githubBranch, setGithubBranch] = useState(() => localStorage.getItem('meca_github_branch') || 'main');
+  const [githubFilePath, setGithubFilePath] = useState(() => localStorage.getItem('meca_github_filepath') || 'src/data/courses.ts');
+  const [githubCommitMsg, setGithubCommitMsg] = useState('docs: update courses dataset from admin console');
+  const [showToken, setShowToken] = useState(false);
+  
+  const [isPushing, setIsPushing] = useState(false);
+  const [githubStatus, setGithubStatus] = useState<{ type: 'idle' | 'success' | 'error', message: string }>({ type: 'idle', message: '' });
+  const [copiedCode, setCopiedCode] = useState(false);
+
+  // Function to generate the courses.ts code content
+  const generateCoursesTS = () => {
+    const formattedCourses = JSON.stringify(courses, null, 2);
+    return `import { Course } from '../types';
+
+export const CATEGORIES = [
+  'All',
+  'Prompt Engineering',
+  'AI Agents',
+  'AI Automation',
+];
+
+export const COURSES: Course[] = ${formattedCourses};
+`;
+  };
+
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(generateCoursesTS());
+    setCopiedCode(true);
+    setTimeout(() => setCopiedCode(false), 2000);
+    showStatus("কোর্স কোড সফলভাবে ক্লিপবোর্ডে কপি করা হয়েছে!");
+  };
+
+  const handleDownloadFile = () => {
+    const element = document.createElement("a");
+    const file = new Blob([generateCoursesTS()], {type: 'text/plain'});
+    element.href = URL.createObjectURL(file);
+    element.download = "courses.ts";
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+    showStatus("courses.ts ফাইলটি সফলভাবে ডাউনলোড করা হয়েছে!");
+  };
+
+  const handlePushToGithub = async () => {
+    if (!githubToken.trim() || !githubRepo.trim() || !githubBranch.trim()) {
+      setGithubStatus({ 
+        type: 'error', 
+        message: 'অনুগ্রহ করে GitHub Token, Repository (username/repo) এবং Branch সঠিক ভাবে প্রদান করুন।' 
+      });
+      return;
+    }
+
+    // Save configuration settings
+    localStorage.setItem('meca_github_token', githubToken);
+    localStorage.setItem('meca_github_repo', githubRepo);
+    localStorage.setItem('meca_github_branch', githubBranch);
+    localStorage.setItem('meca_github_filepath', githubFilePath);
+
+    setIsPushing(true);
+    setGithubStatus({ type: 'idle', message: 'GitHub সংযোগ স্থাপন করা হচ্ছে...' });
+
+    try {
+      const fileContent = generateCoursesTS();
+      const encodedContent = btoa(unescape(encodeURIComponent(fileContent)));
+      
+      // 1. Get SHA of the existing file (if any)
+      const getFileUrl = `https://api.github.com/repos/${githubRepo}/contents/${githubFilePath}?ref=${githubBranch}`;
+      let existingFileSha = '';
+      
+      try {
+        const response = await fetch(getFileUrl, {
+          headers: {
+            'Authorization': `token ${githubToken}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          existingFileSha = data.sha;
+        }
+      } catch (err) {
+        console.log("File might not exist yet. Proceeding without SHA.");
+      }
+
+      // 2. Put file content
+      const putFileUrl = `https://api.github.com/repos/${githubRepo}/contents/${githubFilePath}`;
+      const body: any = {
+        message: githubCommitMsg || 'docs: update courses dataset from admin console',
+        content: encodedContent,
+        branch: githubBranch
+      };
+      
+      if (existingFileSha) {
+        body.sha = existingFileSha;
+      }
+
+      const putResponse = await fetch(putFileUrl, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${githubToken}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/vnd.github.v3+json'
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (putResponse.ok) {
+        const result = await putResponse.json();
+        setGithubStatus({ 
+          type: 'success', 
+          message: `সফলভাবে GitHub এ পুশ করা হয়েছে! Commit URL: ${result.commit.html_url}` 
+        });
+        showStatus("GitHub সিঙ্ক সফলভাবে সম্পন্ন হয়েছে!");
+      } else {
+        const errorData = await putResponse.json();
+        setGithubStatus({ 
+          type: 'error', 
+          message: `ভুল ত্রুটি হয়েছে: ${errorData.message || putResponse.statusText}` 
+        });
+      }
+    } catch (error: any) {
+      console.error(error);
+      setGithubStatus({ 
+        type: 'error', 
+        message: `নেটওয়ার্ক সংযোগ বা API ত্রুটি: ${error?.message || error}` 
+      });
+    } finally {
+      setIsPushing(false);
+    }
+  };
 
   const showStatus = (text: string, type: 'success' | 'error' = 'success') => {
     setStatusMessage({ type, text });
@@ -107,15 +243,15 @@ export default function AdminPanel({
     setIsAddingNew(true);
     setFormTitle('');
     setFormDescription('');
-    setFormCategory('Mechatronics');
+    setFormCategory('Prompt Engineering');
     setFormLevel('Beginner');
     setFormPrice(49.99);
-    setFormThumbnail('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800');
-    setFormInstructorName('Dr. Sarah Jenkins');
-    setFormInstructorRole('Associate Professor');
-    setFormInstructorAvatar('https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200');
-    setFormInstructorBio('Expert in this field with multiple research articles.');
-    setFormTags('Arduino, Electronics, Robotics');
+    setFormThumbnail('https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&q=80&w=800');
+    setFormInstructorName('Abrar Chowdhury');
+    setFormInstructorRole('AI Research Architect');
+    setFormInstructorAvatar('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200');
+    setFormInstructorBio('Expert in artificial intelligence and automation programming.');
+    setFormTags('AI, LLMs, Automation');
     setFormSyllabus([
       {
         id: 'sec-1',
@@ -324,6 +460,16 @@ export default function AdminPanel({
           >
             লোগো ও ছবি ব্র্যান্ডিং
           </button>
+          <button
+            onClick={() => setActiveTab('github')}
+            className={`px-4 pb-3.5 text-xs font-extrabold tracking-wider uppercase border-b-2 transition-all cursor-pointer ${
+              activeTab === 'github'
+                ? 'border-orange-500 text-neutral-900'
+                : 'border-transparent text-neutral-400 hover:text-neutral-600'
+            }`}
+          >
+            GitHub সিঙ্ক ম্যানেজার 🚀
+          </button>
         </div>
       )}
 
@@ -374,6 +520,275 @@ export default function AdminPanel({
               </p>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* GITHUB SYNC TAB CONTENT */}
+      {activeTab === 'github' && !editingCourse && !isAddingNew && (
+        <div className="space-y-8 animate-fadeIn">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            {/* LEFT COLUMN: GitHub Direct API Push Form */}
+            <div className="lg:col-span-7 bg-white rounded-3xl border border-neutral-100 shadow-xs p-6 md:p-8 space-y-6">
+              <div>
+                <h3 className="text-sm font-black text-neutral-900 uppercase tracking-wider flex items-center gap-2">
+                  <Github className="w-5 h-5 text-neutral-950" />
+                  GitHub অটোমেটিক রিপোজিটরি পুশ (API Sync)
+                </h3>
+                <p className="text-xs text-neutral-500 font-semibold mt-1 leading-relaxed">
+                  আপনার এডমিন প্যানেলের পরিবর্তনগুলো সরাসরি আপনার GitHub রিপোজিটরিতে সেভ করতে চান? নিচে আপনার GitHub Details দিন। এটি ব্রাউজারের সুরক্ষায় লোকাল স্টোরেজে সেভ থাকবে।
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {/* PAT Token */}
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-wider text-neutral-400 block mb-1.5">
+                    GitHub Personal Access Token (PAT):
+                  </label>
+                  <div className="relative flex items-center">
+                    <input
+                      type={showToken ? "text" : "password"}
+                      value={githubToken}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setGithubToken(val);
+                        localStorage.setItem('meca_github_token', val);
+                      }}
+                      className="w-full pl-4 pr-11 py-2.5 bg-neutral-50 hover:bg-neutral-100/50 focus:bg-white border border-neutral-200 text-neutral-800 text-xs font-mono rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all placeholder:text-neutral-300"
+                      placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowToken(!showToken)}
+                      className="absolute right-3 text-neutral-400 hover:text-neutral-600 transition-colors focus:outline-none cursor-pointer p-1"
+                    >
+                      {showToken ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-neutral-400 font-medium mt-1">
+                    * অবশ্যই আপনার টোকেনে `repo` বা `public_repo` লিখার অনুমতি (Write Access) থাকতে হবে।
+                  </p>
+                </div>
+
+                {/* Grid for Repo and Branch */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-wider text-neutral-400 block mb-1.5">
+                      Repo Name (username/repo-name):
+                    </label>
+                    <input
+                      type="text"
+                      value={githubRepo}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setGithubRepo(val);
+                        localStorage.setItem('meca_github_repo', val);
+                      }}
+                      className="w-full px-4 py-2.5 bg-neutral-50 hover:bg-neutral-100/50 focus:bg-white border border-neutral-200 text-neutral-800 text-xs font-medium rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all placeholder:text-neutral-300"
+                      placeholder="jahid1882008/meca-learning"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-wider text-neutral-400 block mb-1.5">
+                      Target Branch Name:
+                    </label>
+                    <input
+                      type="text"
+                      value={githubBranch}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setGithubBranch(val);
+                        localStorage.setItem('meca_github_branch', val);
+                      }}
+                      className="w-full px-4 py-2.5 bg-neutral-50 hover:bg-neutral-100/50 focus:bg-white border border-neutral-200 text-neutral-800 text-xs font-medium rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all placeholder:text-neutral-300"
+                      placeholder="main"
+                    />
+                  </div>
+                </div>
+
+                {/* Grid for FilePath and Commit Message */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-wider text-neutral-400 block mb-1.5">
+                      Dataset File Path:
+                    </label>
+                    <input
+                      type="text"
+                      value={githubFilePath}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setGithubFilePath(val);
+                        localStorage.setItem('meca_github_filepath', val);
+                      }}
+                      className="w-full px-4 py-2.5 bg-neutral-50 hover:bg-neutral-100/50 focus:bg-white border border-neutral-200 text-neutral-800 text-xs font-medium rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+                      placeholder="src/data/courses.ts"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-wider text-neutral-400 block mb-1.5">
+                      Commit Message:
+                    </label>
+                    <input
+                      type="text"
+                      value={githubCommitMsg}
+                      onChange={(e) => setGithubCommitMsg(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-neutral-50 hover:bg-neutral-100/50 focus:bg-white border border-neutral-200 text-neutral-800 text-xs font-medium rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+                      placeholder="docs: update courses dataset from admin console"
+                    />
+                  </div>
+                </div>
+
+                {/* Action trigger button */}
+                <div className="pt-3">
+                  <button
+                    onClick={handlePushToGithub}
+                    disabled={isPushing}
+                    className="w-full py-3.5 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 disabled:bg-neutral-300 text-white text-xs font-black rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer border border-orange-400/20"
+                  >
+                    {isPushing ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <CloudLightning className="w-4 h-4 text-white animate-pulse" />
+                    )}
+                    {isPushing ? 'GitHub এ ফাইল সিঙ্ক হচ্ছে...' : 'সরাসরি GitHub এ পরিবর্তন পুশ করুন (Sync)'}
+                  </button>
+                </div>
+
+                {/* API Response Status Banner */}
+                {githubStatus.type !== 'idle' && (
+                  <div className={`p-4 rounded-xl border flex items-start gap-3 animate-fadeIn text-xs ${
+                    githubStatus.type === 'success' 
+                      ? 'bg-green-50 text-green-800 border-green-100' 
+                      : 'bg-red-50 text-red-800 border-red-100'
+                  }`}>
+                    <div className="mt-0.5">
+                      {githubStatus.type === 'success' ? (
+                        <Check className="w-4 h-4 text-green-600 font-bold" />
+                      ) : (
+                        <AlertCircle className="w-4 h-4 text-red-600" />
+                      )}
+                    </div>
+                    <div className="space-y-1 font-semibold leading-normal">
+                      <p>{githubStatus.message}</p>
+                      {githubStatus.type === 'success' && (
+                        <span className="text-[10px] text-green-600 underline font-bold block">
+                          * অভিনন্দন! আপনার ডেটাসেট এখন সফলভাবে গিটহাবে লাইভ রয়েছে।
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* RIGHT COLUMN: Static Download & Built-in Guide */}
+            <div className="lg:col-span-5 space-y-6">
+              
+              {/* Card A: Easy Manual Sync (Code Export) */}
+              <div className="bg-white rounded-3xl border border-neutral-100 shadow-xs p-6 space-y-4">
+                <div>
+                  <h4 className="text-xs font-black text-neutral-900 uppercase tracking-wider flex items-center gap-2">
+                    <Download className="w-4.5 h-4.5 text-orange-500" />
+                    ম্যানুয়াল কোড এক্সপোর্ট (সম্পূর্ণ নিরাপদ)
+                  </h4>
+                  <p className="text-[11px] text-neutral-500 font-medium mt-1 leading-normal">
+                    আপনার যদি GitHub API বা টোকেন ব্যবহার করতে কোনো দ্বিধা থাকে, তবে নিচের কোড এক্সপোর্ট অপশনগুলো দিয়ে সহজে নিজের ফাইলে বসাতে পারেন:
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={handleDownloadFile}
+                    className="flex items-center justify-center gap-2 py-2.5 bg-orange-50 hover:bg-orange-100/80 text-orange-700 border border-orange-100 text-[11px] font-bold rounded-xl transition-all cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    ফাইল ডাউনলোড করুন
+                  </button>
+                  <button
+                    onClick={handleCopyCode}
+                    className="flex items-center justify-center gap-2 py-2.5 bg-neutral-50 hover:bg-neutral-100 text-neutral-700 border border-neutral-100 text-[11px] font-bold rounded-xl transition-all cursor-pointer"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    কোড কপি করুন
+                  </button>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-neutral-50 border border-neutral-100">
+                  <span className="text-[9px] font-black uppercase tracking-wider text-neutral-400 block mb-1">ফাইল পাথ:</span>
+                  <code className="text-[10px] font-mono text-neutral-800 font-bold">src/data/courses.ts</code>
+                  <p className="text-[10px] text-neutral-400 font-medium mt-1 leading-snug">
+                    * ডাউনলোড করা ফাইল বা কপি করা কোডটি আপনার গিটহাব রিপোজিটরির এই ফাইলে পেস্ট করে কমিট করে দিলেই সব আপডেট হয়ে যাবে।
+                  </p>
+                </div>
+              </div>
+
+              {/* Card B: AI Studio IDE Sync Integration Guide */}
+              <div className="bg-neutral-900 rounded-3xl text-white p-6 space-y-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-orange-500">
+                    <Github className="w-4.5 h-4.5 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-wider text-white">
+                      AI Studio Workspace Sync
+                    </h4>
+                    <span className="text-[10px] text-neutral-400 font-semibold block">প্লাটফর্মের বিল্ট-ইন সিঙ্ক গাইড</span>
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-neutral-300 font-medium leading-relaxed">
+                  গিটহাবে হোস্ট করা এই অ্যাপ্লিকেশনটিতে কোড পরিবর্তন সংরক্ষণ করতে AI Studio এর বিল্ট-ইন গিটহাব কানেকশনও ব্যবহার করতে পারেন:
+                </p>
+
+                <ol className="space-y-3 text-[11px] font-semibold text-neutral-400 list-decimal pl-4 leading-normal">
+                  <li>
+                    ডান পাশের উপরে অবস্থিত <strong className="text-white">Settings (গিয়ার আইকন)</strong> এ ক্লিক করুন।
+                  </li>
+                  <li>
+                    সেখান থেকে <strong className="text-white">"Sync with GitHub"</strong> বা <strong className="text-white">"Export to GitHub"</strong> অপশনটি সিলেক্ট করুন।
+                  </li>
+                  <li>
+                    আপনার GitHub অ্যাকাউন্টটি কানেক্ট ও অথরাইজ করে সরাসরি রিপোজিটরি সিঙ্ক করে ফেলুন।
+                  </li>
+                </ol>
+
+                <div className="pt-2 border-t border-neutral-800 text-[10px] text-neutral-500 font-medium leading-normal">
+                  * এডমিন প্যানেলের লাইভ ডাটা ফায়ারবেসে স্টোর হয়, তাই গিটহাবে কোড আপডেট করার পর ডাটাবেসের ডাটাগুলো সুরক্ষিত ও আপ-টু-ডেট থাকবে।
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          {/* Quick Preview of the JSON to sync */}
+          <div className="bg-white rounded-3xl border border-neutral-100 p-6 shadow-xs">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h4 className="text-xs font-black text-neutral-900 uppercase tracking-wider">সিঙ্কযোগ্য ডেটাবেস কোড প্রিভিউ (Courses Dataset Preview)</h4>
+                <p className="text-[10px] text-neutral-400 font-semibold mt-0.5">গিটহাবে সিঙ্ক হওয়ার পূর্বে বর্তমান ডেটাবেসের কোর্স ডেটা স্ট্রাকচার দেখে নিন</p>
+              </div>
+              <button 
+                onClick={handleCopyCode}
+                className="px-3 py-1.5 border border-neutral-100 hover:border-orange-100 text-neutral-600 hover:text-orange-600 text-[10px] font-black rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
+              >
+                <Copy className="w-3 h-3" />
+                কোড কপি
+              </button>
+            </div>
+            
+            <div className="relative rounded-2xl bg-neutral-950 p-4 max-h-60 overflow-y-auto scrollbar-thin border border-neutral-900">
+              <pre className="text-[10px] font-mono text-neutral-300 leading-normal">
+                {generateCoursesTS().substring(0, 1000)}
+                {"\n\n/* ... (আরো অনেক ডাটা নিচে রয়েছে, কপি বা ডাউনলোড বাটনে ক্লিক করে পুরো ফাইলটি পাবেন) */"}
+              </pre>
+            </div>
+          </div>
+
         </div>
       )}
 
@@ -511,10 +926,9 @@ export default function AdminPanel({
                     onChange={(e) => setFormCategory(e.target.value)}
                     className="w-full px-3 py-2 bg-neutral-50 border border-neutral-200 text-neutral-800 text-xs font-bold rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all cursor-pointer"
                   >
-                    <option value="Mechatronics">Mechatronics</option>
-                    <option value="Software Development">Software Development</option>
-                    <option value="Design & UI/UX">Design & UI/UX</option>
-                    <option value="Data Science & AI">Data Science & AI</option>
+                    <option value="Prompt Engineering">Prompt Engineering</option>
+                    <option value="AI Agents">AI Agents</option>
+                    <option value="AI Automation">AI Automation</option>
                   </select>
                 </div>
 

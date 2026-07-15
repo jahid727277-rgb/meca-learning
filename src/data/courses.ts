@@ -1,81 +1,83 @@
 import { Course, Review } from '../types';
+import thumbPromptEng from '../assets/images/thumb_prompt_eng_1784141318711.jpg';
+import thumbAiAgents from '../assets/images/thumb_ai_agents_1784141335616.jpg';
+import thumbAiAuto from '../assets/images/thumb_ai_auto_1784141351116.jpg';
 
 export const CATEGORIES = [
   'All',
-  'Mechatronics',
-  'Software Development',
-  'Design & UI/UX',
-  'Data Science & AI',
+  'Prompt Engineering',
+  'AI Agents',
+  'AI Automation',
 ];
 
 export const COURSES: Course[] = [
   {
-    id: 'meca-101',
-    title: 'Introduction to Mechatronics & Robotics',
-    description: 'Master the fundamentals of combining mechanical systems, electronics, and microcontrollers to build autonomous robotic devices.',
-    category: 'Mechatronics',
+    id: 'ai-101',
+    title: 'Generative AI, LLMs & Prompt Engineering Foundations',
+    description: 'Master the core mechanics of Large Language Models and learn to write production-grade prompts. Deep-dive into zero-shot learning, few-shot conditioning, and reasoning chains.',
+    category: 'Prompt Engineering',
     level: 'Beginner',
-    rating: 4.8,
+    rating: 4.9,
     reviewCount: 342,
-    duration: '14h 45m',
-    lessonsCount: 8,
+    duration: '10h 15m',
+    lessonsCount: 5,
     price: 49.99,
-    thumbnail: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800',
-    tags: ['Robotics', 'Hardware', 'Arduino', 'Electronics'],
+    thumbnail: thumbPromptEng,
+    tags: ['Prompt Engineering', 'Generative AI', 'LLMs', 'Gemini'],
     instructor: {
-      name: 'Dr. Sarah Jenkins',
-      role: 'Associate Professor of Mechatronics',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200',
-      bio: 'Dr. Jenkins has over 15 years of research experience in autonomous robotics and micro-electromechanical systems (MEMS). She previously worked at NASA JPL.',
+      name: 'Abrar Chowdhury',
+      role: 'AI Research Architect',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200',
+      bio: 'Abrar is a lead machine learning researcher with a focus on advanced alignment techniques, prompt reasoning, and agentic workflows.',
     },
     syllabus: [
       {
         id: 'sec-1',
-        title: 'Section 1: Foundations & Hardware',
+        title: 'Section 1: Large Language Models Mechanics',
         lessons: [
           {
             id: 'les-1',
-            title: 'Welcome & Course Overview',
+            title: 'Welcome & Introduction to Generative AI',
             duration: '08:24',
             type: 'video',
             videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-            content: 'In this lesson, we introduce the concept of Mechatronics—the intersection of mechanical engineering, electronics, computer science, and control systems. We will review the course roadmap, project files, and the component kits needed for subsequent labs.'
+            content: 'Welcome to Meca Learning! In this introductory lesson, we will cover the foundational shift from traditional software development to Generative AI. You will learn about how Large Language Models work, the concept of tokens, and the significance of context windows.'
           },
           {
             id: 'les-2',
-            title: 'Microcontroller Basics: Arduino vs. Raspberry Pi',
+            title: 'How LLMs Process Context & Generate Tokens',
             duration: '15:40',
             type: 'video',
             videoUrl: 'https://www.w3schools.com/html/movie.mp4',
-            content: 'Choosing the right brain for your robot is critical. We discuss the key architecture, GPIO, power profiles, and practical use-cases of microcontroller units (like Arduino) versus single-board computers (like Raspberry Pi).'
+            content: 'Learn how transformer-based models read inputs, represent tokens numerically, and predict subsequent tokens. We will explore key hyper-parameters such as Temperature, Top-K, and Top-P, and how they control creativity and determinism.'
           },
           {
             id: 'les-3',
-            title: 'Quiz: Microcontroller Foundations',
+            title: 'Quiz: Foundational LLM Architecture',
             duration: '10:00',
             type: 'quiz',
             quiz: [
               {
                 id: 'q-1-1',
-                question: 'Which component is best suited for real-time sensor polling and immediate low-latency motor control?',
+                question: 'Which parameter determines the random variability or creativity of generated text responses in an LLM?',
                 options: [
-                  'Single-Board Computer (e.g., Raspberry Pi 4)',
-                  'Microcontroller Unit (e.g., Arduino Uno / ATmega328P)',
-                  'GPU accelerator',
-                  'Analog amplifier'
+                  'Top-K',
+                  'Context Window',
+                  'Temperature',
+                  'Token Limit'
                 ],
-                correctAnswer: 1,
+                correctAnswer: 2,
               },
               {
                 id: 'q-1-2',
-                question: 'What does GPIO stand for in microcontroller hardware?',
+                question: 'What is a context window in LLMs?',
                 options: [
-                  'General Purpose Input Output',
-                  'Graphical Processing Interface Object',
-                  'Global Protocol Instruction Optimizer',
-                  'Gear Pinion Oscillator'
+                  'The window size of the visual browser interface.',
+                  'The maximum number of tokens a model can accept and process in a single API call.',
+                  'The physical monitor aspect ratio.',
+                  'A software program to format prompt parameters.'
                 ],
-                correctAnswer: 0,
+                correctAnswer: 1,
               },
             ],
           },
@@ -83,222 +85,96 @@ export const COURSES: Course[] = [
       },
       {
         id: 'sec-2',
-        title: 'Section 2: Actuators & Sensors',
+        title: 'Section 2: Professional Prompt Engineering Techniques',
         lessons: [
           {
             id: 'les-4',
-            title: 'Reading: Sensors and Transducers in Robotics',
+            title: 'Reading: Zero-Shot, Few-Shot, and Chain-of-Thought',
             duration: '12m read',
             type: 'reading',
-            content: `### Sensors and Transducers in Mechatronics
+            content: `### Structured Prompt Engineering Techniques
 
-In any mechatronic system, sensors act as the sensory organs, gathering critical data from the physical environment. A **sensor** detects a physical quantity (like light, temperature, force, or distance) and converts it into a readable signal (often voltage).
+To extract the highest quality responses from LLMs, engineers rely on structured reasoning frameworks within prompts.
 
-#### Key Sensor Types:
-1. **Ultrasonic Sensors (HC-SR04)**: Measures distance by emitting high-frequency sound waves and timing their reflection back.
-2. **Inertial Measurement Units (IMUs)**: Employs accelerometers and gyroscopes to measure orientation, velocity, and gravitational forces.
-3. **Infrared (IR) Sensors**: Frequently used for line-tracking and proximity detection.
-4. **Rotary Encoders**: Attached to motors to measure shaft rotation angle and speed.
-
-#### Transducers:
-A transducer is a broader term for any device that converts energy from one form to another. All sensors are transducers, but actuators (which convert electrical signals to mechanical force) are also transducers!`
+#### Core Prompting Techniques:
+1. **Zero-Shot Prompting**: Presenting a task to the model without any examples. Useful for straightforward classification or general writing.
+2. **Few-Shot Prompting**: Injecting structured input-output pairs inside the prompt template. This helps guide style, format, and edge-case behaviors.
+3. **Chain-of-Thought (CoT)**: Instructing the model to output its step-by-step reasoning before delivering the final answer. This dramatically reduces logical errors on math, logic, and reasoning tasks.
+4. **System Instructions / System Prompts**: Global rules defined at the system level that direct the persona, boundaries, and safe modes of the model.`
           },
           {
             id: 'les-5',
-            title: 'DC Motors, Servos, and Steppers Explained',
-            duration: '22:15',
+            title: 'Implementing Structured Output Formats (JSON/XML)',
+            duration: '12:15',
             type: 'video',
             videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-            content: 'Learn how to move physical components. We cover DC motors for continuous high-speed movement, Servomotors for precise angle positioning, and Stepper motors for high-precision step-by-step translation.'
-          },
-          {
-            id: 'les-6',
-            title: 'Quiz: Motors and Sensors',
-            duration: '08:00',
-            type: 'quiz',
-            quiz: [
-              {
-                id: 'q-1-3',
-                question: 'Which type of motor is best suited for precision 3D printer axes where exact step angles are required without feedback sensors?',
-                options: [
-                  'Standard Brushed DC Motor',
-                  'Servo Motor',
-                  'Stepper Motor',
-                  'Solenoid Actuator'
-                ],
-                correctAnswer: 2,
-              }
-            ]
+            content: 'To connect language models with downstream APIs and web databases, we need structured outputs. Learn to force models to return valid, parsable JSON schemas reliably.'
           }
         ],
-      },
-      {
-        id: 'sec-3',
-        title: 'Section 3: Integration & Autonomous Control',
-        lessons: [
-          {
-            id: 'les-7',
-            title: 'Implementing PID Controllers',
-            duration: '18:50',
-            type: 'video',
-            videoUrl: 'https://www.w3schools.com/html/movie.mp4',
-            content: 'PID (Proportional, Integral, Derivative) feedback loops are the backbone of stable flight, motor speed regulation, and thermal controls. We break down the mathematics and write Arduino code to balance a ball on a plate.'
-          },
-          {
-            id: 'les-8',
-            title: 'Project Lab: Designing a Line-Following Autonomous Vehicle',
-            duration: '25m read',
-            type: 'reading',
-            content: `### Capstone Project: Design a Line-Following Robot
-
-This final lab guides you through integrating everything you have learned so far into a fully functional, self-steering line follower.
-
-#### Hardware Checklist:
-*   **Chassis**: 2-wheel drive robotic chassis with castor wheel
-*   **Controller**: Arduino Nano or Uno
-*   **Driver**: L298N Dual H-Bridge Motor Driver
-*   **Sensor array**: 3x TCRT5000 Infrared reflective sensors
-*   **Power**: 2x 18650 Li-ion batteries (7.4V total)
-
-#### Implementation Steps:
-1.  **Chassis Assembly**: Mount the DC motors and sensors. Ensure the IR sensors are positioned ~5mm above the floor.
-2.  **Wiring**: Connect motor driver control pins to PWM-capable pins on your microcontroller. Wire the IR sensor analog/digital outputs to standard input pins.
-3.  **The Algorithm**:
-    *   If the middle sensor detects black (high reflectance/low reading): drive both motors forward.
-    *   If the left sensor detects black: slow down the left motor and accelerate the right motor (steer left).
-    *   If the right sensor detects black: slow down the right motor and accelerate the left motor (steer right).
-4.  **PID Fine-tuning**: Introduce a simple PD (Proportional-Derivative) controller to smooth out jerky oscillations and increase top speed!`
-          }
-        ]
       }
     ]
   },
   {
-    id: 'meca-202',
-    title: 'Advanced Robotic Control Systems & Kinematics',
-    description: 'Delve into the mathematics of robotic arms, inverse kinematics, trajectories, and robotic operating systems (ROS) for industrial control.',
-    category: 'Mechatronics',
-    level: 'Advanced',
-    rating: 4.9,
+    id: 'ai-202',
+    title: 'Building Autonomous AI Agents & Multi-Agent Systems',
+    description: 'Learn to design and deploy stateful, tool-enabled autonomous agents. Understand ReAct cycles, state charts, memory orchestration, and multi-agent systems.',
+    category: 'AI Agents',
+    level: 'Intermediate',
+    rating: 4.8,
     reviewCount: 189,
-    duration: '18h 10m',
+    duration: '14h 30m',
     lessonsCount: 6,
     price: 79.99,
-    thumbnail: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&q=80&w=800',
-    tags: ['Kinematics', 'ROS', 'Industrial', 'Math'],
+    thumbnail: thumbAiAgents,
+    tags: ['AI Agents', 'LangGraph', 'Autogen', 'Function Calling'],
     instructor: {
-      name: 'Dr. Sarah Jenkins',
-      role: 'Associate Professor of Mechatronics',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200',
-      bio: 'Dr. Jenkins has over 15 years of research experience in autonomous robotics and micro-electromechanical systems (MEMS). She previously worked at NASA JPL.',
+      name: 'Samia Rahman',
+      role: 'Lead AI Engineer',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
+      bio: 'Samia designs and deploys next-generation AI agent collectives for enterprise automation and context-aware systems.',
     },
     syllabus: [
       {
         id: 'sec-202-1',
-        title: 'Section 1: Forward & Inverse Kinematics',
+        title: 'Section 1: Core Agentic Architectures',
         lessons: [
           {
             id: 'les-202-1',
-            title: 'Degrees of Freedom (DoF) and Joint Coordinates',
+            title: 'Understanding the ReAct (Reasoning & Acting) Loop',
             duration: '14:20',
             type: 'video',
             videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-            content: 'We define revolute and prismatic joints, calculate the total degrees of freedom for planar and spatial manipulators, and set up coordinate frames for robotic links.'
+            content: 'We break down the foundational cycle of AI agents: Thought, Action, Observation. Learn how models decide when to use a tool and how they adapt based on tool returns.'
           },
           {
             id: 'les-202-2',
-            title: 'Reading: Denavit-Hartenberg (D-H) Parameters',
+            title: 'Reading: Function Calling & Tool Binding',
             duration: '15m read',
             type: 'reading',
-            content: `### Denavit-Hartenberg (D-H) Convention
+            content: `### Function Calling & Real-world Tool Integration
 
-The D-H convention is the standard mathematical formula used to establish coordinate frames on links of robotic chains.
+An AI agent is only as powerful as the tools it can access. Modern APIs (like Gemini API) support native **Function Calling**, which bridges language understanding with actual computational action.
 
-#### The Four Parameters:
-1.  **Link Length ($a_i$)**: Distance along $x_i$ from the intersection of $x_i$ with $z_{i-1}$ to the origin of frame $i$.
-2.  **Link Twist ($\\alpha_i$)**: Angle from $z_{i-1}$ to $z_i$ measured about $x_i$.
-3.  **Link Offset ($d_i$)**: Distance along $z_{i-1}$ from the origin of frame $i-1$ to the intersection of $x_i$ with $z_{i-1}$.
-4.  **Joint Angle ($\\theta_i$)**: Angle from $x_{i-1}$ to $x_i$ measured about $z_{i-1}$.
-
-By setting up a homogenous transformation matrix for each link using these parameters, we can multiply them together to find the overall forward kinematics equation—mapping joint space to Cartesian space!`
+#### Key Stages of Function Calling:
+1.  **Tool Definition**: Declaring your local system functions (e.g., \`searchDatabase\`, \`sendEmail\`) inside the model config using JSON Schema descriptions.
+2.  **Model Intent Selection**: The user submits a prompt, and the model analyzes whether a custom function should be invoked. It outputs the function name and structured arguments.
+3.  **Local Execution**: Your local backend server receives this JSON response, executes the matching function, and gets the real-world result (e.g., live weather data or database outputs).
+4.  **Final Synthesis**: You send the function result back to the model, and it synthesizes a natural language answer for the user.`
           },
           {
             id: 'les-202-3',
-            title: 'Quiz: DH Convention & DoF',
+            title: 'Quiz: Tool Integration and Function Binding',
             duration: '06:00',
             type: 'quiz',
             quiz: [
               {
                 id: 'q-202-1',
-                question: 'How many degrees of freedom does a standard fully free rigid body have in 3D Cartesian space?',
+                question: 'During a function calling cycle, does the model execute the actual system code directly on your local servers?',
                 options: [
-                  '3 DoF (translation only)',
-                  '4 DoF',
-                  '6 DoF (3 translation, 3 rotation)',
-                  '8 DoF'
-                ],
-                correctAnswer: 2,
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  },
-  {
-    id: 'soft-101',
-    title: 'Modern Fullstack Web Development with React',
-    description: 'Build robust, responsive web applications from scratch. Covers state management, component architecture, APIs, and modern CSS frameworks.',
-    category: 'Software Development',
-    level: 'Intermediate',
-    rating: 4.7,
-    reviewCount: 1245,
-    duration: '22h 30m',
-    lessonsCount: 12,
-    price: 59.99,
-    thumbnail: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?auto=format&fit=crop&q=80&w=800',
-    tags: ['React', 'TypeScript', 'Tailwind', 'NodeJS'],
-    instructor: {
-      name: 'Marcus Sterling',
-      role: 'Principal Engineer at DevGrid',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200',
-      bio: 'Marcus has spent a decade building massive scalable web apps for Fortune 500 tech companies. He loves teaching clean code and component reusability.',
-    },
-    syllabus: [
-      {
-        id: 'sec-soft-1',
-        title: 'Section 1: Modern React & Hooks',
-        lessons: [
-          {
-            id: 'les-soft-1',
-            title: 'React Fundamentals & JSX Rendering',
-            duration: '11:10',
-            type: 'video',
-            videoUrl: 'https://www.w3schools.com/html/movie.mp4',
-            content: 'We review virtual DOM, component lifecycles, and how JSX compiled down to raw React elements. You will create your first simple counter and lists.'
-          },
-          {
-            id: 'les-soft-2',
-            title: 'Mastering useState and useEffect',
-            duration: '21:05',
-            type: 'video',
-            videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-            content: 'Deep dive into state synchronization, state batches, and scheduling side effects. We outline the crucial rules of the dependency array to prevent infinite re-renders.'
-          },
-          {
-            id: 'les-soft-3',
-            title: 'Quiz: State and Effects',
-            duration: '07:00',
-            type: 'quiz',
-            quiz: [
-              {
-                id: 'q-soft-1',
-                question: 'What happens if you omit the dependency array in a useEffect hook?',
-                options: [
-                  'The effect runs only once when the component mounts.',
-                  'The effect runs on every single render of the component.',
-                  'The effect never runs.',
-                  'The compiler throws a syntax error.'
+                  'Yes, it compiles and runs your code in a remote sandbox.',
+                  'No, the model only decides which function to call and with what parameters. Your own application code must execute the function.',
+                  'Yes, if the model has terminal permissions.',
+                  'No, function calling is only a theoretical pattern.'
                 ],
                 correctAnswer: 1,
               }
@@ -309,94 +185,69 @@ By setting up a homogenous transformation matrix for each link using these param
     ]
   },
   {
-    id: 'design-101',
-    title: 'Mastering Design Systems & Tailwind CSS',
-    description: 'Learn the principles of professional digital product design. Build customized typography systems, color scales, layouts, and reusable component libraries.',
-    category: 'Design & UI/UX',
-    level: 'Beginner',
-    rating: 4.9,
-    reviewCount: 412,
-    duration: '10h 15m',
-    lessonsCount: 5,
-    price: 39.99,
-    thumbnail: 'https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?auto=format&fit=crop&q=80&w=800',
-    tags: ['UI Design', 'Figma', 'Tailwind', 'Typography'],
-    instructor: {
-      name: 'Elena Rostova',
-      role: 'Creative Director & UX Architect',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
-      bio: 'Elena is an award-winning interface designer who believes that typography is 95% of digital design. She has consulted for top fintech and consumer brands.',
-    },
-    syllabus: [
-      {
-        id: 'sec-des-1',
-        title: 'Section 1: The Anatomy of a Design System',
-        lessons: [
-          {
-            id: 'les-des-1',
-            title: 'Typography Hierarchies and Grid Scales',
-            duration: '12:45',
-            type: 'video',
-            videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-            content: 'Elena breaks down standard typographic scale ratios, tracking (letter-spacing), line-heights, and vertical rhythm. Discover how to create grids that breathe.'
-          },
-          {
-            id: 'les-des-2',
-            title: 'Designing with Tailwind: Custom Themes and Configurations',
-            duration: '18:10',
-            type: 'video',
-            videoUrl: 'https://www.w3schools.com/html/movie.mp4',
-            content: 'We show how to utilize Tailwind v4 themes, declare custom color variables, set up responsive prefixes, and extend utility boundaries elegantly without inline bloating.'
-          },
-          {
-            id: 'les-des-3',
-            title: 'Reading: Light Accents and Dark Balance',
-            duration: '8m read',
-            type: 'reading',
-            content: `### Styling with White Backgrounds and Light Accents
-
-High-end professional websites (like Stripe, Vercel, and modern SaaS providers) often prefer a **minimalist, high-contrast light layout**. This focuses attention purely on the content, typography, and beautiful data.
-
-#### Key Principles:
-1.  **Off-White Surfaces**: Absolute white (\`#ffffff\`) is excellent for cards, but using a very subtle off-white (like \`#f9fafb\` or \`#f8fafc\`) for the viewport background adds elegant depth and reduces eye strain.
-2.  **Sophisticated Accents**: Use highly saturated accent colors (like our custom vibrant crimson or light red) *sparingly*. This means buttons, status badges, active borders, and highlight numbers should sport the color, while body text and margins should remain charcoal gray/neutral black.
-3.  **Deliberate Shadows**: Use soft, diffused, translucent shadows (\`shadow-sm\` or custom \`rgba(0,0,0,0.03)\`) rather than harsh default dark borders to define cards and containers.`
-          }
-        ]
-      }
-    ]
-  },
-  {
     id: 'ai-303',
-    title: 'Python for Artificial Intelligence & Neural Networks',
-    description: 'Dive deep into supervised and unsupervised learning. Build, train, and optimize your own multi-layer neural networks from scratch using PyTorch.',
-    category: 'Data Science & AI',
+    title: 'AI Automation Programming & Workflow Orchestration',
+    description: 'Connect AI to APIs and trigger workflows automatically. Build robust background microservices, self-healing automations, and document processors.',
+    category: 'AI Automation',
     level: 'Advanced',
-    rating: 4.6,
-    reviewCount: 928,
-    duration: '20h 50m',
-    lessonsCount: 15,
-    price: 89.99,
-    thumbnail: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&q=80&w=800',
-    tags: ['Python', 'PyTorch', 'Neural Networks', 'Machine Learning'],
+    rating: 4.9,
+    reviewCount: 521,
+    duration: '18h 45m',
+    lessonsCount: 6,
+    price: 99.99,
+    thumbnail: thumbAiAuto,
+    tags: ['Automation', 'APIs', 'Node.js', 'Workflows', 'n8n'],
     instructor: {
-      name: 'Marcus Sterling',
-      role: 'Principal Engineer at DevGrid',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200',
-      bio: 'Marcus has spent a decade building massive scalable web apps for Fortune 500 tech companies. He loves teaching clean code and component reusability.',
+      name: 'Dr. Sarah Jenkins',
+      role: 'Automation System Specialist',
+      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200',
+      bio: 'Dr. Jenkins focuses on self-healing workflow orchestrations, asynchronous triggers, and API proxy routing for distributed agents.',
     },
     syllabus: [
       {
         id: 'sec-ai-1',
-        title: 'Section 1: Linear Regression & Gradient Descent',
+        title: 'Section 1: Automated Workflows & API Pipelines',
         lessons: [
           {
             id: 'les-ai-1',
-            title: 'Mathematical Foundations of Cost Functions',
+            title: 'Foundations of Autonomous Document Pipelines',
             duration: '15:30',
             type: 'video',
             videoUrl: 'https://www.w3schools.com/html/movie.mp4',
-            content: 'We explain the Mean Squared Error (MSE) cost function, partial derivatives, and how the learning rate controls step sizes down the error surface.'
+            content: 'Explore how to parse files, incoming emails, and Slack triggers. We set up Webhooks, configure asynchronous event queues, and write Node.js controllers to feed context into LLMs.'
+          },
+          {
+            id: 'les-ai-2',
+            title: 'Reading: Designing Self-Healing Automated Workflows',
+            duration: '12m read',
+            type: 'reading',
+            content: `### Designing Self-Healing AI Workflows
+
+Automation pipelines are prone to unpredictable changes, API failures, or rate-limits. Introducing AI into automation requires specific resilience strategies.
+
+#### Key Strategies:
+1. **Fallback Chains**: Automatically falling back to alternative lightweight models if the primary model encounters rate-limits.
+2. **JSON Verification Loops**: When an automation relies on JSON schema output, write validation scripts that run automatically. If validation fails, feed the error back to the model to correct its output.
+3. **Structured Backoff**: Retrying API calls with exponential backoff on HTTP 429 (Too Many Requests).`
+          },
+          {
+            id: 'les-ai-3',
+            title: 'Quiz: Automation Resiliency',
+            duration: '08:00',
+            type: 'quiz',
+            quiz: [
+              {
+                id: 'q-ai-1',
+                question: 'What is the best way to handle a JSON parsing failure in an automated web webhook pipeline?',
+                options: [
+                  'Crash the entire server.',
+                  'Silently ignore the error.',
+                  'Capture the validation error, pass it back to the LLM with instructions to correct it, and rerun the prediction.',
+                  'Manually edit the JSON file every time.'
+                ],
+                correctAnswer: 2,
+              }
+            ]
           }
         ]
       }
@@ -407,26 +258,26 @@ High-end professional websites (like Stripe, Vercel, and modern SaaS providers) 
 export const REVIEWS: Review[] = [
   {
     id: 'r1',
-    userName: 'Alex Chen',
+    userName: 'Tanvir Hossain',
     userAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100',
     rating: 5,
-    comment: 'The Mechatronics course is incredible. The hands-on line follower lab actually worked perfectly on my hardware! Very clean explanations.',
+    comment: 'The Prompt Engineering course is excellent. The examples of zero-shot vs few-shot and XML tagging are directly applicable to my job. Outstanding material!',
     date: 'June 24, 2026'
   },
   {
     id: 'r2',
-    userName: 'Jessica Kim',
+    userName: 'Sumaiya Akter',
     userAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100',
     rating: 5,
-    comment: 'Elena Rostova’s Design Systems module transformed the way I think about typography. Best explanation of responsive spacing I have ever seen.',
+    comment: 'The Autonomous AI Agents course is mind-blowing! Writing custom tool-binds and seeing the model reason state changes has given me a huge edge.',
     date: 'May 12, 2026'
   },
   {
     id: 'r3',
-    userName: 'David Miller',
+    userName: 'Imran Khan',
     userAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=100',
-    rating: 4,
-    comment: 'Super high-quality video content and quizzes. The React state management section really cleared up my understanding of concurrent renders.',
+    rating: 5,
+    comment: 'Exceptional, hands-on automation lessons. I automated my client onboarding document flow in a single afternoon using the code patterns taught here.',
     date: 'July 01, 2026'
   }
 ];

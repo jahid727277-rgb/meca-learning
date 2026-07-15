@@ -23,34 +23,51 @@ export default function Hero({ onSearch, onExploreClick }: HeroProps) {
   ];
 
   return (
-    <section id="hero-section" className="relative overflow-hidden bg-gradient-to-b from-orange-50/40 via-white to-white py-16 lg:py-24 border-b border-orange-100/60">
+    <section id="hero-section" className="relative overflow-hidden bg-gradient-to-b from-[#FAF8F5] via-[#FFFDFB] to-white pt-10 pb-12 lg:pt-14 lg:pb-16 border-b border-orange-100/40">
       {/* Visual background accents */}
-      <div className="absolute top-1/4 left-10 w-72 h-72 bg-orange-100/30 rounded-full blur-3xl -z-10" />
-      <div className="absolute bottom-1/4 right-10 w-96 h-96 bg-orange-50/50 rounded-full blur-3xl -z-10" />
+      <div className="absolute top-1/4 left-10 w-72 h-72 bg-orange-100/10 rounded-full blur-3xl -z-10" />
+      <div className="absolute bottom-1/4 right-10 w-96 h-96 bg-orange-50/30 rounded-full blur-3xl -z-10" />
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto">
           {/* Tagline Badge */}
-          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-50 border border-orange-100 text-orange-700 text-xs font-semibold tracking-wide mb-6">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-50/60 border border-orange-100/60 text-orange-700 text-xs font-semibold tracking-wide mb-5">
             <span className="flex h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
             Empowering Next-Gen Engineering & Tech Leaders
           </div>
 
           {/* Headline */}
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-neutral-900 tracking-tight leading-none mb-6">
-            Master Technical Skills. <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-orange-500">
-              Build the Future.
-            </span>
+          <h1 className="text-5xl sm:text-6xl lg:text-[72px] font-extrabold text-neutral-950 tracking-tight leading-[1.05] mb-5 font-sans">
+            Learn skills <br />
+            that{' '}
+            <span className="relative inline-block text-neutral-950 pb-1 sm:pb-2">
+              actually
+              <svg 
+                className="absolute -bottom-1 left-0 w-full h-2.5 sm:h-3 text-[#ff5330]" 
+                viewBox="0 0 100 10" 
+                preserveAspectRatio="none"
+              >
+                <path 
+                  d="M3,6 C35,7.5 65,7.5 97,3 C70,5 35,5.5 3,6" 
+                  stroke="currentColor" 
+                  strokeWidth="3.5" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                  fill="none" 
+                />
+              </svg>
+            </span> <br />
+            move you <br />
+            forward.
           </h1>
 
           {/* Subheading */}
-          <p className="text-lg text-neutral-600 font-medium leading-relaxed mb-8 max-w-2xl mx-auto">
+          <p className="text-lg text-neutral-600 font-medium leading-relaxed mb-5 max-w-2xl mx-auto">
             Meca Learning aims to make the knowledge of AI, AI agents, and AI automation programming accessible to everyone and build a skilled future
           </p>
 
           {/* Course Search Box */}
-          <form onSubmit={handleSubmit} className="relative max-w-md mx-auto mb-12">
+          <form onSubmit={handleSubmit} className="relative max-w-md mx-auto mb-4">
             <input
               type="text"
               placeholder="Search courses (e.g. Arduino, React, Kinematics)..."

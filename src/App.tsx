@@ -7,6 +7,7 @@ import StudentDashboard from './components/StudentDashboard';
 import Classroom from './components/Classroom';
 import ReviewSection from './components/ReviewSection';
 import { COURSES, REVIEWS } from './data/courses';
+import { normalizeCourse } from './utils/courseHelper';
 import { UserProgress, Enrollment, Course, Review } from './types';
 import { formatBDTPrice } from './utils/currency';
 import { 
@@ -38,9 +39,9 @@ const DEFAULT_PROGRESS: UserProgress = {
   streak: 3,
   totalHours: 4.5,
   enrolledCourses: {
-    'meca-101': {
-      courseId: 'meca-101',
-      progress: 25, // 2 completed out of 8
+    'ai-101': {
+      courseId: 'ai-101',
+      progress: 40, // 2 completed out of 5
       completedLessons: ['les-1', 'les-2'],
       currentLessonId: 'les-3',
       quizScores: {},
@@ -151,16 +152,31 @@ export default function App() {
           // Keep other configs if needed, but not logoUrl
         }
 
-        // 2. Get mechatronics courses
+        // 2. Get and clean AI courses
         const dbCourses = await getCoursesFromDB();
+
         if (!dbCourses || dbCourses.length === 0) {
-          // If RTDB is empty, seed it with the default mechatronics courses
+          // If RTDB is empty, seed it with the default AI courses
           await saveCoursesToDB(COURSES);
           setCourses(COURSES);
         } else {
-          // Ensure all static/example courses are present in the database
+          // Normalize every course fetched from Realtime Database to ensure all arrays/properties are safe and correct.
+          // This prevents courses from being filtered out due to Firebase array-to-object key/value serialization.
+          const normalizedDBCourses = dbCourses
+            .filter((c: any) => c && (c.id || c.title))
+            .map((c: any) => {
+              try {
+                return normalizeCourse(c);
+              } catch (e) {
+                console.error("Error normalizing course from Realtime Database:", e);
+                return null;
+              }
+            })
+            .filter(Boolean) as Course[];
+
           let hasNewCourses = false;
-          const updatedCourses = [...dbCourses];
+          const updatedCourses = [...normalizedDBCourses];
+
           for (const defaultCourse of COURSES) {
             const exists = updatedCourses.some(c => c.id === defaultCourse.id);
             if (!exists) {
@@ -168,11 +184,13 @@ export default function App() {
               hasNewCourses = true;
             }
           }
-          if (hasNewCourses) {
+
+          // If we found missing courses or there were format issues resolved, write back to DB
+          if (hasNewCourses || normalizedDBCourses.length !== dbCourses.length) {
             await saveCoursesToDB(updatedCourses);
             setCourses(updatedCourses);
           } else {
-            setCourses(dbCourses);
+            setCourses(normalizedDBCourses);
           }
         }
       } catch (err: any) {
@@ -424,7 +442,7 @@ export default function App() {
                   }}
                 />
                 
-                <section id="catalog-section" className="bg-white">
+                <section id="catalog-section" className="bg-white pb-24 sm:pb-32 md:pb-40">
                   <CourseCatalog
                     courses={courses}
                     onSelectCourse={(courseId) => setSelectedCourseId(courseId)}
