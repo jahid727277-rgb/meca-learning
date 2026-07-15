@@ -28,6 +28,8 @@ import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import AuthModal from './components/AuthModal';
 import AdminPanel from './components/AdminPanel';
 
+const mecaLearningLogo = 'https://res.cloudinary.com/djjhol6dg/image/upload/v1784080493/meca_learning_logo_a3yqec.png';
+
 const LOCAL_STORAGE_KEY = 'meca_learning_progress_v1';
 const REVIEWS_STORAGE_KEY = 'meca_learning_reviews_v1';
 
@@ -66,7 +68,7 @@ export default function App() {
 
   // Dynamic courses and branding configurations loaded from Firebase Realtime Database
   const [courses, setCourses] = useState<Course[]>(COURSES);
-  const [logoUrl, setLogoUrl] = useState<string>('https://res.cloudinary.com/djjhol6dg/image/upload/v1783518180/20260708_194111_pcs7uw.png');
+  const [logoUrl, setLogoUrl] = useState<string>(mecaLearningLogo);
   const [coursesLoading, setCoursesLoading] = useState<boolean>(true);
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
 
@@ -144,7 +146,16 @@ export default function App() {
         // 1. Get branding configurations
         const configs = await getImageConfigs();
         if (configs && configs.logoUrl) {
-          setLogoUrl(configs.logoUrl);
+          if (
+            configs.logoUrl !== 'https://res.cloudinary.com/djjhol6dg/image/upload/v1783518180/20260708_194111_pcs7uw.png' &&
+            configs.logoUrl !== '' &&
+            configs.logoUrl !== 'meca_learning_logo.png' &&
+            configs.logoUrl !== '/meca_learning_logo.png'
+          ) {
+            setLogoUrl(configs.logoUrl);
+          } else {
+            setLogoUrl(mecaLearningLogo);
+          }
         }
 
         // 2. Get mechatronics courses
@@ -823,7 +834,7 @@ export default function App() {
           
           {/* Logo description */}
           <div className="md:col-span-5 space-y-4">
-            <Logo variant="white" size={44} logoUrl={logoUrl} />
+            <Logo variant="white" size={40} logoUrl={logoUrl} />
             <p className="text-[11px] leading-relaxed text-neutral-500 max-w-sm font-semibold">
               Meca Learning is a modern digital platform training professional engineers and software developers. 
               Gain certified hardware micro-controller programming and fullstack code practices instantly.

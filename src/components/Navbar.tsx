@@ -40,7 +40,7 @@ export default function Navbar({
           onClick={() => onNavigate('explore')} 
           className="cursor-pointer hover:opacity-90 transition-opacity"
         >
-          <Logo size={52} variant="orange" logoUrl={logoUrl} />
+          <Logo size={40} variant="orange" logoUrl={logoUrl} />
         </div>
 
         {/* Center Desktop Navigation */}
