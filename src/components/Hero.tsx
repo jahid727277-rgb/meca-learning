@@ -33,7 +33,7 @@ export default function Hero({ onSearch, onExploreClick }: HeroProps) {
           {/* Tagline Badge */}
           <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-50/60 border border-orange-100/60 text-orange-700 text-xs font-semibold tracking-wide mb-5">
             <span className="flex h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
-            Empowering Next-Gen Engineering & Tech Leaders
+            AI • AI Automation • Agentic AI • Design • Editing
           </div>
 
           {/* Headline */}
@@ -63,7 +63,7 @@ export default function Hero({ onSearch, onExploreClick }: HeroProps) {
 
           {/* Subheading */}
           <p className="text-lg text-neutral-600 font-medium leading-relaxed mb-5 max-w-2xl mx-auto">
-            Meca Learning aims to make the knowledge of AI, AI agents, and AI automation programming accessible to everyone and build a skilled future
+            Meca Learning aims to make the knowledge of AI, AI agents, and AI automation accessible to everyone and build a skilled future
           </p>
 
           {/* Course Search Box */}

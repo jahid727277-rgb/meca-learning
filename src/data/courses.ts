@@ -1,7 +1,7 @@
 import { Course, Review } from '../types';
-import thumbPromptEng from '../assets/images/thumb_prompt_eng_1784141318711.jpg';
-import thumbAiAgents from '../assets/images/thumb_ai_agents_1784141335616.jpg';
-import thumbAiAuto from '../assets/images/thumb_ai_auto_1784141351116.jpg';
+import thumbPromptEng from '../assets/images/thumb_prompt_eng_restored_1784197144591.jpg';
+import thumbAiAgents from '../assets/images/thumb_ai_agents_restored_1784197158404.jpg';
+import thumbAiAuto from '../assets/images/thumb_ai_auto_restored_1784197174333.jpg';
 
 export const CATEGORIES = [
   'All',

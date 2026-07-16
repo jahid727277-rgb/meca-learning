@@ -1,4 +1,7 @@
 import { Course, SyllabusSection, Lesson, QuizQuestion } from '../types';
+import thumbPromptEng from '../assets/images/thumb_prompt_eng_restored_1784197144591.jpg';
+import thumbAiAgents from '../assets/images/thumb_ai_agents_restored_1784197158404.jpg';
+import thumbAiAuto from '../assets/images/thumb_ai_auto_restored_1784197174333.jpg';
 
 /**
  * Safely converts any value (including index-based objects from Firebase) to an array.
@@ -82,7 +85,13 @@ export function normalizeCourse(c: any): Course {
     duration: c.duration || '10h 30m',
     lessonsCount: (c.lessonsCount !== undefined && !isNaN(Number(c.lessonsCount)) && Number(c.lessonsCount) > 0) ? Number(c.lessonsCount) : totalLessons,
     price: (c.price !== undefined && !isNaN(Number(c.price))) ? Number(c.price) : 49.99,
-    thumbnail: c.thumbnail || 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&q=80&w=800',
+    thumbnail: c.id === 'ai-101' 
+      ? thumbPromptEng 
+      : c.id === 'ai-202' 
+      ? thumbAiAgents 
+      : c.id === 'ai-303' 
+      ? thumbAiAuto 
+      : (c.thumbnail || 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&q=80&w=800'),
     tags: tags,
     syllabus
   };
