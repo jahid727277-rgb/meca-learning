@@ -85,13 +85,24 @@ export function normalizeCourse(c: any): Course {
     duration: c.duration || '10h 30m',
     lessonsCount: (c.lessonsCount !== undefined && !isNaN(Number(c.lessonsCount)) && Number(c.lessonsCount) > 0) ? Number(c.lessonsCount) : totalLessons,
     price: (c.price !== undefined && !isNaN(Number(c.price))) ? Number(c.price) : 49.99,
-    thumbnail: c.id === 'ai-101' 
-      ? thumbPromptEng 
-      : c.id === 'ai-202' 
-      ? thumbAiAgents 
-      : c.id === 'ai-303' 
-      ? thumbAiAuto 
-      : (c.thumbnail || 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&q=80&w=800'),
+    thumbnail: (() => {
+      const idStr = String(c.id || '').toLowerCase();
+      const titleStr = String(c.title || '').toLowerCase();
+      if (idStr === 'ai-101' || titleStr.includes('prompt engineering') || titleStr.includes('generative ai')) {
+        return thumbPromptEng;
+      }
+      if (idStr === 'ai-202' || titleStr.includes('agent') || titleStr.includes('multi-agent')) {
+        return thumbAiAgents;
+      }
+      if (idStr === 'ai-303' || titleStr.includes('automation') || titleStr.includes('workflow')) {
+        return thumbAiAuto;
+      }
+      const thumbStr = String(c.thumbnail || '').trim();
+      if (!thumbStr) {
+        return 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&q=80&w=800';
+      }
+      return c.thumbnail;
+    })(),
     tags: tags,
     syllabus
   };

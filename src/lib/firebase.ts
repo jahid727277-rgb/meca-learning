@@ -128,7 +128,6 @@ export async function registerWithEmail(email: string, password: string, name: s
     await updateProfile(userCredential.user, { displayName: name });
     return userCredential.user;
   } catch (error: any) {
-    console.error("Error registering with email:", error);
     throw error;
   }
 }
@@ -138,7 +137,6 @@ export async function loginWithEmail(email: string, password: string) {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     return userCredential.user;
   } catch (error: any) {
-    console.error("Error logging in with email:", error);
     throw error;
   }
 }

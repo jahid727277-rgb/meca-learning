@@ -185,6 +185,19 @@ export default function App() {
             }
           }
 
+          // Detect if any normalized course had its thumbnail corrected/updated relative to the DB course
+          let hasThumbnailCorrection = false;
+          normalizedDBCourses.forEach((normalized) => {
+            const original = dbCourses.find((dbC: any) => dbC && dbC.id === normalized.id);
+            if (original && original.thumbnail !== normalized.thumbnail) {
+              hasThumbnailCorrection = true;
+            }
+          });
+
+          if (hasThumbnailCorrection) {
+            hasNewCourses = true;
+          }
+
           // If we found missing courses or there were format issues resolved, write back to DB
           if (hasNewCourses || normalizedDBCourses.length !== dbCourses.length) {
             await saveCoursesToDB(updatedCourses);
@@ -433,6 +446,7 @@ export default function App() {
             {currentView === 'explore' && !selectedCourseId && (
               <div className="animate-fadeIn">
                 <Hero
+                  courses={courses}
                   onSearch={(q) => setSearchQuery(q)}
                   onExploreClick={() => {
                     const catalogEl = document.getElementById('catalog-section');
@@ -559,6 +573,13 @@ export default function App() {
                 <StudentDashboard
                   progress={progress}
                   courses={courses}
+                  user={user}
+                  onSignOut={logoutUser}
+                  isAdmin={isAdmin}
+                  onNavigate={(view) => {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    setCurrentView(view);
+                  }}
                   onNavigateToCourse={(courseId) => {
                     setSelectedCourseId(courseId);
                     setCurrentView('my-learning');

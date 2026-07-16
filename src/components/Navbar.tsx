@@ -77,47 +77,24 @@ export default function Navbar({
           </div>
 
           {user ? (
-            <div className="flex items-center gap-3">
-               {/* Admin Panel button */}
-              {isAdmin && (
-                <button
-                  onClick={() => onNavigate('admin')}
-                  className={`text-[10px] uppercase tracking-wider font-extrabold px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                    currentView === 'admin' 
-                      ? 'text-orange-600 bg-orange-50/50 font-black border border-orange-100/30' 
-                      : 'text-neutral-500 hover:text-orange-600 hover:bg-white/30'
-                  }`}
-                >
-                  Admin Panel
-                </button>
-              )}
-
+            <div className="flex items-center">
               <button 
                 onClick={() => onNavigate('dashboard')}
                 title="Go to Dashboard"
-                className="flex items-center gap-2 hover:opacity-90 transition-opacity"
+                className="flex items-center justify-center hover:scale-105 transition-transform"
               >
                 {user.photoURL ? (
                   <img 
                     src={user.photoURL} 
                     alt={user.displayName || "User"} 
-                    className="w-8 h-8 rounded-full border border-orange-200/30 object-cover"
+                    className="w-9 h-9 rounded-full border-2 border-neutral-900 object-cover shadow-sm"
                     referrerPolicy="no-referrer"
                   />
                 ) : (
-                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-orange-100/50 text-orange-600 border border-orange-200/30 font-bold text-xs">
+                  <div className="flex items-center justify-center w-9 h-9 rounded-full bg-orange-100 text-orange-700 border-2 border-neutral-900 font-bold text-sm shadow-sm">
                     {(user.displayName || "U").charAt(0).toUpperCase()}
                   </div>
                 )}
-                <span className="hidden md:inline text-xs font-bold text-neutral-700">
-                  {user.displayName?.split(' ')[0] || 'Student'}
-                </span>
-              </button>
-              <button
-                onClick={onSignOut}
-                className="text-[10px] uppercase tracking-wider font-extrabold text-neutral-500 hover:text-red-500 transition-colors cursor-pointer"
-              >
-                Sign Out
               </button>
             </div>
           ) : (

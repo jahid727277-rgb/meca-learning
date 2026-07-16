@@ -26,11 +26,12 @@ export default function CourseCatalog({
 
     // Search query filter
     if (searchQuery.trim() !== '') {
-      const q = searchQuery.toLowerCase();
+      const q = searchQuery.toLowerCase().trim();
       result = result.filter(
         (c) =>
           c.title.toLowerCase().includes(q) ||
           c.description.toLowerCase().includes(q) ||
+          c.category.toLowerCase().includes(q) ||
           c.tags.some((t) => t.toLowerCase().includes(q))
       );
     }
@@ -45,11 +46,16 @@ export default function CourseCatalog({
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
       {/* Header section with catalog description - Simplified as requested */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 animate-fadeIn">
         <div>
           <h2 className="text-2xl font-black text-neutral-900 tracking-tight">
             Popular courses
           </h2>
+          {searchQuery.trim() !== '' && (
+            <p className="text-xs sm:text-sm font-bold text-orange-600 mt-1">
+              Showing search results for: <span className="italic">"{searchQuery}"</span>
+            </p>
+          )}
         </div>
       </div>
 

@@ -1,13 +1,20 @@
 import React, { useState } from 'react';
 import { Search, GraduationCap, Cpu, Award, Zap } from 'lucide-react';
+import { Course } from '../types';
 
 interface HeroProps {
+  courses: Course[];
   onSearch: (query: string) => void;
   onExploreClick: () => void;
 }
 
-export default function Hero({ onSearch, onExploreClick }: HeroProps) {
+export default function Hero({ courses, onSearch, onExploreClick }: HeroProps) {
   const [query, setQuery] = useState('');
+
+  const handleChange = (val: string) => {
+    setQuery(val);
+    onSearch(val);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,22 +74,24 @@ export default function Hero({ onSearch, onExploreClick }: HeroProps) {
           </p>
 
           {/* Course Search Box */}
-          <form onSubmit={handleSubmit} className="relative max-w-md mx-auto mb-4">
-            <input
-              type="text"
-              placeholder="Search courses (e.g. Arduino, React, Kinematics)..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="w-full pl-12 pr-28 py-3.5 bg-white rounded-full border border-orange-200/80 shadow-sm text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all text-sm"
-            />
-            <Search className="absolute left-4.5 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
-            <button
-              type="submit"
-              className="absolute right-1.5 top-1.5 bottom-1.5 bg-neutral-950 hover:bg-neutral-800 text-white px-5 rounded-full text-xs font-semibold transition-colors shadow-sm"
-            >
-              Find Courses
-            </button>
-          </form>
+          <div className="relative max-w-md mx-auto mb-4 z-30">
+            <form onSubmit={handleSubmit} className="relative w-full">
+              <input
+                type="text"
+                placeholder="Search courses (e.g. Arduino, React, Kinematics)..."
+                value={query}
+                onChange={(e) => handleChange(e.target.value)}
+                className="w-full pl-12 pr-28 py-3.5 bg-white rounded-full border border-orange-200/80 shadow-sm text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all text-sm"
+              />
+              <Search className="absolute left-4.5 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
+              <button
+                type="submit"
+                className="absolute right-1.5 top-1.5 bottom-1.5 bg-neutral-950 hover:bg-neutral-800 text-white px-5 rounded-full text-xs font-semibold transition-colors shadow-sm"
+              >
+                Find Courses
+              </button>
+            </form>
+          </div>
         </div>
 
       </div>
