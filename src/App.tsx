@@ -60,7 +60,14 @@ const DEFAULT_PROGRESS: UserProgress = {
 };
 
 export default function App() {
-  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [user, setUser] = useState<FirebaseUser | null>(() => {
+    try {
+      const cached = localStorage.getItem('meca_cached_user');
+      return cached ? JSON.parse(cached) : null;
+    } catch (e) {
+      return null;
+    }
+  });
   const ADMIN_EMAILS = ['jahid1882008@gmail.com', 'mecalearning@gmail.com'];
   const isAdmin = user !== null && ADMIN_EMAILS.includes(user.email || '');
 
@@ -122,6 +129,16 @@ export default function App() {
       
       if (currentUser) {
         try {
+          const simpleUser = {
+            uid: currentUser.uid,
+            displayName: currentUser.displayName,
+            email: currentUser.email,
+            photoURL: currentUser.photoURL,
+          };
+          localStorage.setItem('meca_cached_user', JSON.stringify(simpleUser));
+        } catch (e) {}
+
+        try {
           const cloudProgress = await getUserProgress(currentUser.uid);
           if (cloudProgress) {
             setProgress(cloudProgress);
@@ -136,6 +153,11 @@ export default function App() {
             console.warn("Error fetching user progress from Firebase:", error?.message || error);
           }
         }
+      } else {
+        try {
+          localStorage.removeItem('meca_cached_user');
+          localStorage.removeItem('current_user_pwd');
+        } catch (e) {}
       }
     });
     return () => unsubscribe();

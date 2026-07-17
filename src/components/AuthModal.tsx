@@ -72,9 +72,9 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
 
       if (loggedUser) {
         try {
-          sessionStorage.setItem('current_user_pwd', password);
+          localStorage.setItem('current_user_pwd', password);
         } catch (e) {
-          console.warn('Failed to save password in sessionStorage:', e);
+          console.warn('Failed to save password in localStorage:', e);
         }
         onSuccess(loggedUser);
         onClose();

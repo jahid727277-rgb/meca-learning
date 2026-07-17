@@ -65,14 +65,14 @@ export default function StudentDashboard({
       }
 
       // Update Password if entered and different from current stored password
-      const currentPwd = sessionStorage.getItem('current_user_pwd') || '';
+      const currentPwd = localStorage.getItem('current_user_pwd') || '';
       if (newPassword.trim() && newPassword.trim() !== currentPwd) {
         if (newPassword.length < 6) {
           throw new Error("নতুন পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।");
         }
         await updatePassword(currentUser, newPassword.trim());
         try {
-          sessionStorage.setItem('current_user_pwd', newPassword.trim());
+          localStorage.setItem('current_user_pwd', newPassword.trim());
         } catch (e) {
           console.warn(e);
         }
@@ -135,7 +135,7 @@ export default function StudentDashboard({
                   setIsEditing(editingState);
                   setEditName(user?.displayName || '');
                   if (editingState) {
-                    setNewPassword(sessionStorage.getItem('current_user_pwd') || '');
+                    setNewPassword(localStorage.getItem('current_user_pwd') || '');
                   } else {
                     setNewPassword('');
                   }
