@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'; import { getEnrolledCourses } from '../utils/courseHelper';
 import { UserProgress, Course } from '../types';
 import { Award, BookOpen, ChevronRight, LogOut, Edit3, Check, KeyRound, User, Smartphone, Mail } from 'lucide-react';
 import { updateProfile, updatePassword } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import Certificates from './Certificates';
+import CourseCard from './CourseCard';
 
 interface StudentDashboardProps {
   progress: UserProgress;
@@ -89,7 +90,7 @@ export default function StudentDashboard({
   };
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6 text-neutral-900 font-sans">
+    <div className="mx-auto max-w-5xl px-4 py-6 text-neutral-900 font-sans">
       
       {/* 1. Header: Simple "Welcome to dashboard" as requested */}
       <div className="text-center mb-6">
@@ -277,67 +278,17 @@ export default function StudentDashboard({
         </div>
 
         {enrolledList.length > 0 ? (
-          <div className="space-y-3">
-            {enrolledList.map(({ enrollment, course }) => {
-              const isFinished = enrollment.progress >= 100;
-              return (
-                <div 
-                  key={course.id}
-                  className="bg-white rounded-xl border border-neutral-200 p-4 shadow-2xs hover:border-neutral-300 transition-colors flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between"
-                >
-                  <div className="space-y-1 max-w-md">
-                    <div className="flex items-center gap-1.5">
-                      <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded tracking-wider border ${
-                        isFinished ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-orange-50 text-orange-700 border-orange-200'
-                      }`}>
-                        {isFinished ? 'Finished' : 'In Progress'}
-                      </span>
-                      <span className="text-neutral-400 text-[10px] font-bold">{course.category}</span>
-                    </div>
-                    
-                    <h4 className="text-sm font-extrabold text-neutral-900 tracking-tight">
-                      {course.title}
-                    </h4>
-                    
-                    <p className="text-[11px] text-neutral-500 leading-normal line-clamp-1">
-                      {course.description || "এই কোর্সের সম্পূর্ণ সিলেবাস মেকা লার্নিং পোর্টালে সক্রিয় রয়েছে।"}
-                    </p>
-
-                    <div className="flex items-center gap-2 pt-0.5">
-                      <div className="w-20 bg-neutral-100 h-1.5 rounded-full overflow-hidden border border-neutral-200">
-                        <div 
-                          className={`h-full ${isFinished ? 'bg-emerald-500' : 'bg-orange-500'}`}
-                          style={{ width: `${enrollment.progress}%` }}
-                        />
-                      </div>
-                      <span className="text-[9px] font-bold text-neutral-500">
-                        {enrollment.progress.toFixed(0)}%
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Course Action Buttons */}
-                  <div className="flex items-center gap-1.5 w-full sm:w-auto justify-end pt-1 sm:pt-0">
-                    {isFinished && (
-                      <button
-                        onClick={() => setSelectedCertCourseId(course.id)}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-neutral-300 text-neutral-700 hover:bg-neutral-50 text-[10px] font-bold transition-all cursor-pointer"
-                      >
-                        <Award className="w-3.5 h-3.5 text-amber-500" />
-                        Certificate
-                      </button>
-                    )}
-                    <button
-                      onClick={() => onNavigateToCourse(course.id)}
-                      className="flex items-center gap-1 px-3 py-1 bg-neutral-900 hover:bg-neutral-800 text-white text-[10px] font-bold rounded-lg transition-all cursor-pointer"
-                    >
-                      {isFinished ? 'Review' : 'Resume'}
-                      <ChevronRight className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {enrolledList.map(({ enrollment, course }) => (
+              <CourseCard
+                key={course.id}
+                course={course}
+                enrollment={enrollment}
+                onSelect={(courseId) => onNavigateToCourse(courseId)}
+                onEnroll={() => {}}
+                onShowCertificate={(courseId) => setSelectedCertCourseId(courseId)}
+              />
+            ))}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center text-center py-8 bg-neutral-50/50 rounded-xl border border-dashed border-neutral-200 p-4">

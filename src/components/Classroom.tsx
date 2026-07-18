@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Course, Lesson, SyllabusSection, Enrollment } from '../types';
-import PlyrPlayer from './PlyrPlayer';
+import YouTubePlayer from './YouTubePlayer';
 import { 
   Play, Pause, ArrowLeft, CheckCircle, Circle, Video, 
   BookOpen, HelpCircle, ChevronRight, Sparkles, Trophy, Award, RotateCcw
@@ -39,6 +39,7 @@ export default function Classroom({
     setSelectedAnswers({});
     setQuizSubmitted(false);
     setQuizScore(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentLesson]);
 
   const handleLessonSelect = (lesson: Lesson) => {
@@ -113,8 +114,24 @@ export default function Classroom({
 
   return (
     <div className="bg-neutral-50/30 min-h-screen">
+            {/* Global Video Player Area (Full Width under Navbar) */}
+      {currentLesson.type === 'video' && (
+        <div className="w-full bg-black shadow-xl z-20 relative">
+          <div className="mx-auto max-w-4xl w-full">
+            {currentLesson.videoUrl ? (
+              <YouTubePlayer videoUrl={currentLesson.videoUrl} />
+            ) : (
+              <div className="text-center text-neutral-400 p-8 space-y-2 aspect-video flex flex-col justify-center items-center w-full h-full">
+                <Video className="w-12 h-12 text-neutral-600 mx-auto animate-pulse" />
+                <p className="text-sm font-semibold">Video Unavailable</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Classroom header status bar */}
-      <div className="bg-white border-b border-orange-100 py-4 px-4 sm:px-6 lg:px-8">
+      <div className="bg-white border-b border-orange-100 py-3 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <button
@@ -164,27 +181,16 @@ export default function Classroom({
       </div>
 
       {/* Main learning split board */}
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      
+      <div className="mx-auto max-w-7xl px-4 py-4 sm:py-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
           {/* LEFT COLUMN - Lesson Player Content (Col 8) */}
           <section className="lg:col-span-8 space-y-6">
             
-            {/* 1. VIDEO TYPE LESSON */}
+            {/* 1. VIDEO TYPE LESSON (TEXT CONTENT) */}
             {currentLesson.type === 'video' && (
               <div className="bg-white rounded-3xl border border-neutral-100 shadow-xs overflow-hidden">
-                {/* Plyr.js Video Player Integration */}
-                <div className="w-full bg-neutral-950">
-                  {currentLesson.videoUrl ? (
-                    <PlyrPlayer videoUrl={currentLesson.videoUrl} />
-                  ) : (
-                    <div className="text-center text-neutral-400 p-8 space-y-2 aspect-video flex flex-col justify-center items-center">
-                      <Video className="w-12 h-12 text-neutral-600 mx-auto animate-pulse" />
-                      <p className="text-sm font-semibold">Video Unavailable</p>
-                    </div>
-                  )}
-                </div>
-
                 <div className="p-6 sm:p-8 space-y-4">
                   <div className="flex items-center gap-2">
                     <span className="px-2.5 py-1 rounded-md bg-orange-50 text-orange-600 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">

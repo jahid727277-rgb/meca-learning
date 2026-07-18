@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Course, Lesson, SyllabusSection, Level } from '../types';
 
 const mecaLearningLogo = 'https://res.cloudinary.com/djjhol6dg/image/upload/v1784080493/meca_learning_logo_a3yqec.png';
-import PlyrPlayer from './PlyrPlayer';
+import YouTubePlayer from './YouTubePlayer';
 import { formatBDTPrice } from '../utils/currency';
 import { 
   Plus, Edit3, Trash2, Image, Link, Play, FileText, HelpCircle, 
@@ -1162,7 +1162,7 @@ export const COURSES: Course[] = ${formattedCourses};
                                     <span className="text-[9px] font-extrabold tracking-wider text-orange-500 uppercase">Plyr.js Live Preview</span>
                                     <span className="text-[8px] font-bold text-neutral-400 font-mono">{lesson.duration}</span>
                                   </div>
-                                  <PlyrPlayer videoUrl={lesson.videoUrl} />
+                                  <YouTubePlayer videoUrl={lesson.videoUrl} />
                                 </div>
                               )}
                             </div>

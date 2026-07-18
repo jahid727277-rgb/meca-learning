@@ -1,6 +1,6 @@
 import React from 'react';
 import { Course, Enrollment } from '../types';
-import { Clock, BookOpen, Star, Sparkles } from 'lucide-react';
+import { Clock, BookOpen, Star, Sparkles, Award } from 'lucide-react';
 import { formatBDTPrice } from '../utils/currency';
 
 interface CourseCardProps {
@@ -9,10 +9,12 @@ interface CourseCardProps {
   enrollment?: Enrollment;
   onSelect: (courseId: string) => void;
   onEnroll: (courseId: string) => void;
+  onShowCertificate?: (courseId: string) => void;
 }
 
-export default function CourseCard({ course, enrollment, onSelect, onEnroll }: CourseCardProps) {
+export default function CourseCard({ course, enrollment, onSelect, onEnroll, onShowCertificate }: CourseCardProps) {
   const isEnrolled = !!enrollment;
+  const isFinished = isEnrolled && enrollment.progress >= 100;
 
   return (
     <article 
@@ -26,34 +28,10 @@ export default function CourseCard({ course, enrollment, onSelect, onEnroll }: C
           referrerPolicy="no-referrer"
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
-        {/* Category & Level Badges */}
-        <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
-          <span className="px-2 py-0.5 rounded-md bg-white/90 backdrop-blur-xs text-[10px] font-bold text-orange-600 border border-orange-100 uppercase tracking-wider">
-            {course.category || 'AI'}
-          </span>
-          <span className="px-2 py-0.5 rounded-md bg-neutral-900/80 backdrop-blur-xs text-[10px] font-bold text-white uppercase tracking-wider">
-            {course.level || 'Beginner'}
-          </span>
-        </div>
       </div>
 
       {/* Course Details */}
       <div className="flex flex-col flex-1 p-5">
-        {/* Rating and Tags */}
-        <div className="flex items-center justify-between text-xs text-neutral-500 font-medium mb-2.5">
-          <div className="flex items-center gap-1">
-            <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-            <span className="text-neutral-900 font-semibold">{course.rating || 5}</span>
-            <span>({course.reviewCount || 0})</span>
-          </div>
-          {course.tags && course.tags.length > 0 && (
-            <div className="flex items-center gap-1 text-[10px] text-orange-600">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>{course.tags[0]}</span>
-            </div>
-          )}
-        </div>
-
         {/* Title */}
         <h3 
           onClick={() => onSelect(course.id)} 
@@ -61,26 +39,13 @@ export default function CourseCard({ course, enrollment, onSelect, onEnroll }: C
         >
           {course.title}
         </h3>
-
         {/* Description */}
         <p className="text-xs text-neutral-500 line-clamp-2 mb-4 font-medium leading-relaxed">
           {course.description}
         </p>
 
-        {/* Stats */}
-        <div className="flex items-center gap-4 text-xs text-neutral-500 font-semibold mb-5 border-t border-b border-neutral-50 py-3 mt-auto">
-          <div className="flex items-center gap-1">
-            <Clock className="w-4 h-4 text-neutral-400" />
-            <span>{course.duration || '10 hours'}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <BookOpen className="w-4 h-4 text-neutral-400" />
-            <span>{course.lessonsCount || (course.syllabus?.flatMap(s => s.lessons).length || 0)} lessons</span>
-          </div>
-        </div>
-
         {/* Progress or Pricing Footer */}
-        <div className="flex items-center justify-between gap-3 pt-1">
+        <div className="flex items-center justify-between gap-3 pt-1 mt-auto">
           {isEnrolled ? (
             <div className="w-full flex flex-col gap-1.5">
               <div className="flex items-center justify-between text-xs font-bold text-neutral-700">
@@ -96,26 +61,36 @@ export default function CourseCard({ course, enrollment, onSelect, onEnroll }: C
             </div>
           ) : (
             <div className="flex flex-col">
-              <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">Tuition</span>
               <span className="text-lg font-black text-neutral-900">{formatBDTPrice(course.price)}</span>
             </div>
           )}
-
           {/* Action Button */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            {isEnrolled && isFinished && onShowCertificate && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onShowCertificate(course.id);
+                }}
+                className="px-2.5 py-2 rounded-xl border border-neutral-200 hover:bg-neutral-50 text-neutral-700 text-xs font-bold transition-colors shadow-xs flex items-center gap-1 cursor-pointer"
+              >
+                <Award className="w-4 h-4 text-amber-500 shrink-0" />
+                Certificate
+              </button>
+            )}
             {isEnrolled ? (
               <button
                 onClick={() => onSelect(course.id)}
-                className="px-4 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold transition-colors shadow-xs"
+                className="px-4 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold transition-colors shadow-xs cursor-pointer shrink-0"
               >
                 Learn
               </button>
             ) : (
               <button
                 onClick={() => onEnroll(course.id)}
-                className="px-4 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold transition-colors shadow-xs hover:shadow-md"
+                className="px-4 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold transition-colors shadow-xs hover:shadow-md cursor-pointer shrink-0"
               >
-                Enroll
+                See
               </button>
             )}
           </div>

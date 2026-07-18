@@ -47,7 +47,7 @@ export default function Navbar({
         <nav className="hidden md:flex items-center space-x-1">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = currentView === item.id;
+            const isActive = currentView === item.id || (item.id === 'my-learning' && currentView === 'classroom');
             return (
               <button
                 key={item.id}
@@ -113,7 +113,7 @@ export default function Navbar({
         <div className="flex justify-around py-2">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = currentView === item.id;
+            const isActive = currentView === item.id || (item.id === 'my-learning' && currentView === 'classroom');
             return (
               <button
                 key={item.id}

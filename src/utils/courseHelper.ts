@@ -1,4 +1,4 @@
-import { Course, SyllabusSection, Lesson, QuizQuestion } from '../types';
+import { Course, SyllabusSection, Lesson, QuizQuestion, Enrollment, UserProgress } from '../types';
 import thumbPromptEng from '../assets/images/thumb_prompt_eng_restored_1784197144591.jpg';
 import thumbAiAgents from '../assets/images/thumb_ai_agents_restored_1784197158404.jpg';
 import thumbAiAuto from '../assets/images/thumb_ai_auto_restored_1784197174333.jpg';
@@ -106,4 +106,13 @@ export function normalizeCourse(c: any): Course {
     tags: tags,
     syllabus
   };
+}
+
+export function getEnrolledCourses(progress: UserProgress, courses: Course[]): { enrollment: Enrollment, course: Course }[] {
+  return Object.values(progress.enrolledCourses)
+    .map((enrollment) => {
+      const course = courses.find((c) => c.id === enrollment.courseId);
+      return { enrollment, course };
+    })
+    .filter((item): item is { enrollment: Enrollment, course: Course } => item.course !== undefined);
 }

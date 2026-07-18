@@ -3,11 +3,12 @@ import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Logo from './components/Logo';
 import CourseCatalog from './components/CourseCatalog';
+import CourseCard from './components/CourseCard';
 import StudentDashboard from './components/StudentDashboard';
 import Classroom from './components/Classroom';
 import ReviewSection from './components/ReviewSection';
 import { COURSES, REVIEWS } from './data/courses';
-import { normalizeCourse } from './utils/courseHelper';
+import { normalizeCourse, getEnrolledCourses } from './utils/courseHelper';
 import { UserProgress, Enrollment, Course, Review } from './types';
 import { formatBDTPrice } from './utils/currency';
 import { 
@@ -29,6 +30,7 @@ import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import AuthModal from './components/AuthModal';
 import Footer, { footerContent } from './components/Footer';
 import AdminPanel from './components/AdminPanel';
+import Certificates from './components/Certificates';
 
 const mecaLearningLogo = '/logo_web.png';
 
@@ -36,27 +38,11 @@ const LOCAL_STORAGE_KEY = 'meca_learning_progress_v1';
 const REVIEWS_STORAGE_KEY = 'meca_learning_reviews_v1';
 
 const DEFAULT_PROGRESS: UserProgress = {
-  streak: 3,
-  totalHours: 4.5,
-  enrolledCourses: {
-    'ai-101': {
-      courseId: 'ai-101',
-      progress: 40, // 2 completed out of 5
-      completedLessons: ['les-1', 'les-2'],
-      currentLessonId: 'les-3',
-      quizScores: {},
-    },
-  },
+  streak: 0,
+  totalHours: 0,
+  enrolledCourses: {},
   certificates: [],
-  activityLog: [
-    { date: '2026-07-01', minutes: 120 },
-    { date: '2026-07-02', minutes: 45 },
-    { date: '2026-07-03', minutes: 90 },
-    { date: '2026-07-04', minutes: 180 },
-    { date: '2026-07-05', minutes: 60 },
-    { date: '2026-07-06', minutes: 240 },
-    { date: '2026-07-07', minutes: 15 },
-  ],
+  activityLog: [],
 };
 
 export default function App() {
@@ -80,10 +66,12 @@ export default function App() {
   const [logoUrl, setLogoUrl] = useState<string>(mecaLearningLogo);
   const [coursesLoading, setCoursesLoading] = useState<boolean>(true);
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
+  const [pendingEnrollCourseId, setPendingEnrollCourseId] = useState<string | null>(null);
 
   // Navigation: 'explore' | 'my-learning' | 'dashboard' | 'classroom' | 'admin'
   const [currentView, setCurrentView] = useState<string>('explore');
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  const [selectedCertCourseId, setSelectedCertCourseId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Course detailed section state - expanded syllabus indices
@@ -158,6 +146,7 @@ export default function App() {
           localStorage.removeItem('meca_cached_user');
           localStorage.removeItem('current_user_pwd');
         } catch (e) {}
+        setProgress(DEFAULT_PROGRESS);
       }
     });
     return () => unsubscribe();
@@ -270,7 +259,12 @@ export default function App() {
   };
 
   // Actions
-  const handleEnroll = (courseId: string) => {
+  const handleEnroll = (courseId: string, currentUser = user) => {
+    if (!currentUser) {
+      setPendingEnrollCourseId(courseId);
+      setShowAuthModal(true);
+      return;
+    }
     if (progress.enrolledCourses[courseId]) return;
 
     const course = courses.find((c) => c.id === courseId);
@@ -296,7 +290,12 @@ export default function App() {
   };
 
   const handleEnrollAndStart = (courseId: string) => {
-    handleEnroll(courseId);
+    if (!user) {
+      setPendingEnrollCourseId(courseId);
+      setShowAuthModal(true);
+      return;
+    }
+    handleEnroll(courseId, user);
     setSelectedCourseId(courseId);
     setCurrentView('classroom');
   };
@@ -410,12 +409,7 @@ export default function App() {
   const activeEnrollment = selectedCourseId ? progress.enrolledCourses[selectedCourseId] : undefined;
 
   // Filter lists for "My Learning" tab
-  const enrolledCoursesList = (Object.values(progress.enrolledCourses) as Enrollment[])
-    .map((enrollment) => {
-      const course = courses.find((c) => c.id === enrollment.courseId);
-      return { enrollment, course };
-    })
-    .filter((item) => item.course !== undefined) as { enrollment: Enrollment; course: Course }[];
+  const enrolledCoursesList = getEnrolledCourses(progress, courses);
 
   return (
     <div className="min-h-screen bg-white text-neutral-800 font-sans flex flex-col">
@@ -502,72 +496,19 @@ export default function App() {
                 </div>
 
                 {enrolledCoursesList.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     {enrolledCoursesList.map(({ course, enrollment }) => (
-                      <div 
+                      <CourseCard
                         key={course.id}
-                        className="group flex flex-col bg-white rounded-2xl border border-neutral-100 hover:border-orange-100 overflow-hidden shadow-xs hover:shadow-md transition-all duration-300"
-                      >
-                        <div className="relative aspect-video w-full overflow-hidden bg-neutral-100">
-                          <img 
-                            src={course.thumbnail} 
-                            alt={course.title}
-                            referrerPolicy="no-referrer"
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          />
-                          <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
-                            <span className="px-2 py-0.5 rounded-md bg-white/95 text-[9px] font-bold text-orange-600 uppercase border border-orange-50">
-                              {course.category}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col flex-1 p-5 space-y-4">
-                          <div>
-                            <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block mb-1">
-                              Syllabus Level: {course.level}
-                            </span>
-                            <h3 
-                              onClick={() => setSelectedCourseId(course.id)}
-                              className="text-sm sm:text-base font-bold text-neutral-900 leading-snug hover:text-orange-600 cursor-pointer transition-colors"
-                            >
-                              {course.title}
-                            </h3>
-                          </div>
-
-                          {/* Progress indicator */}
-                          <div className="space-y-1.5 mt-auto">
-                            <div className="flex items-center justify-between text-xs font-bold text-neutral-700">
-                              <span>Syllabus Completed</span>
-                              <span className="text-orange-600">{enrollment.progress.toFixed(0)}%</span>
-                            </div>
-                            <div className="w-full h-1.5 bg-neutral-100 rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-orange-500 transition-all duration-500" 
-                                style={{ width: `${enrollment.progress}%` }}
-                              />
-                            </div>
-                          </div>
-
-                          <div className="flex justify-end gap-2 pt-1 border-t border-neutral-50">
-                            <button
-                              onClick={() => setSelectedCourseId(course.id)}
-                              className="px-4 py-1.5 rounded-xl border border-neutral-100 text-neutral-600 hover:text-orange-600 hover:border-orange-100 text-xs font-bold transition-colors"
-                            >
-                              Syllabus
-                            </button>
-                            <button
-                              onClick={() => {
-                                setSelectedCourseId(course.id);
-                                setCurrentView('classroom');
-                              }}
-                              className="px-4.5 py-1.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold transition-colors shadow-xs"
-                            >
-                              Resume Studies
-                            </button>
-                          </div>
-                        </div>
-                      </div>
+                        course={course}
+                        enrollment={enrollment}
+                        onSelect={(courseId) => {
+                          setSelectedCourseId(courseId);
+                          setCurrentView('classroom');
+                        }}
+                        onEnroll={handleEnrollAndStart}
+                        onShowCertificate={(courseId) => setSelectedCertCourseId(courseId)}
+                      />
                     ))}
                   </div>
                 ) : (
@@ -989,10 +930,28 @@ export default function App() {
       {/* CUSTOM ON-SITE AUTHENTICATION DIALOG (Direct Login & Register in-app) */}
       {showAuthModal && (
         <AuthModal 
-          onClose={() => setShowAuthModal(false)}
+          onClose={() => {
+            setShowAuthModal(false);
+            setPendingEnrollCourseId(null);
+          }}
           onSuccess={(loggedUser) => {
             setUser(loggedUser);
+            if (pendingEnrollCourseId) {
+              handleEnroll(pendingEnrollCourseId, loggedUser);
+              setSelectedCourseId(pendingEnrollCourseId);
+              setCurrentView('classroom');
+              setPendingEnrollCourseId(null);
+            }
           }}
+        />
+      )}
+
+      {/* Certificate modal popup */}
+      {selectedCertCourseId && (
+        <Certificates 
+          courseId={selectedCertCourseId} 
+          courses={courses}
+          onClose={() => setSelectedCertCourseId(null)} 
         />
       )}
     </div>

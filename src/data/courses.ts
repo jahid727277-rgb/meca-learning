@@ -40,7 +40,7 @@ export const COURSES: Course[] = [
             title: 'Welcome & Introduction to Generative AI',
             duration: '08:24',
             type: 'video',
-            videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+            videoUrl: 'https://youtu.be/KuVckV0wF9w',
             content: 'Welcome to Meca Learning! In this introductory lesson, we will cover the foundational shift from traditional software development to Generative AI. You will learn about how Large Language Models work, the concept of tokens, and the significance of context windows.'
           },
           {
@@ -48,7 +48,7 @@ export const COURSES: Course[] = [
             title: 'How LLMs Process Context & Generate Tokens',
             duration: '15:40',
             type: 'video',
-            videoUrl: 'https://www.w3schools.com/html/movie.mp4',
+            videoUrl: 'https://youtu.be/KDjqbM6WxEQ',
             content: 'Learn how transformer-based models read inputs, represent tokens numerically, and predict subsequent tokens. We will explore key hyper-parameters such as Temperature, Top-K, and Top-P, and how they control creativity and determinism.'
           },
           {
@@ -107,7 +107,7 @@ To extract the highest quality responses from LLMs, engineers rely on structured
             title: 'Implementing Structured Output Formats (JSON/XML)',
             duration: '12:15',
             type: 'video',
-            videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+            videoUrl: 'https://youtu.be/_Vu7CyQgKxw',
             content: 'To connect language models with downstream APIs and web databases, we need structured outputs. Learn to force models to return valid, parsable JSON schemas reliably.'
           }
         ],
