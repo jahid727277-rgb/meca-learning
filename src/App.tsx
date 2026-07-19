@@ -496,7 +496,9 @@ export default function App() {
             {currentView === 'my-learning' && !selectedCourseId && (
               <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 animate-fadeIn">
                 <div className="mb-8">
-                  <h2 className="text-2xl font-black text-neutral-900 tracking-tight">My Active Courses</h2>
+                  <h2 className="text-2xl font-black text-neutral-900 tracking-tight">
+                    {enrolledCoursesList.length > 0 ? "My Active Courses" : "No Enrolled Courses"}
+                  </h2>
                 </div>
 
                 {enrolledCoursesList.length > 0 ? (
@@ -517,18 +519,30 @@ export default function App() {
                   </div>
                 ) : (
                   /* Empty state */
-                  <div className="flex flex-col items-center justify-center text-center p-12 bg-neutral-50/50 rounded-3xl border border-neutral-100 max-w-lg mx-auto">
-                    <Compass className="w-12 h-12 text-neutral-300 mb-4" />
-                    <h3 className="text-lg font-bold text-neutral-800">No Enrolled Courses</h3>
-                    <p className="text-xs text-neutral-500 font-medium max-w-sm mt-1 mb-5">
-                      You are not enrolled in any technical programs yet. Begin your learning journey by exploring our programs catalog.
-                    </p>
-                    <button
-                      onClick={() => setCurrentView('explore')}
-                      className="px-5 py-2.5 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold transition-all shadow-sm"
-                    >
-                      Browse Syllabus Catalog
-                    </button>
+                  <div className="space-y-6">
+                    {/* Popular courses section below empty state */}
+                    <div>
+                      <div className="mb-6">
+                        <h3 className="text-xl font-extrabold text-neutral-950 tracking-tight">Popular Courses</h3>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {courses.slice(0, 4).map((course) => (
+                          <CourseCard
+                            key={course.id}
+                            course={course}
+                            onSelect={(courseId) => {
+                              if (progress.enrolledCourses[courseId]) {
+                                setSelectedCourseId(courseId);
+                                setCurrentView('classroom');
+                              } else {
+                                handleEnrollAndStart(courseId);
+                              }
+                            }}
+                            onEnroll={handleEnrollAndStart}
+                          />
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -552,6 +566,7 @@ export default function App() {
                     setCurrentView('classroom');
                   }}
                   onNavigateToExplore={() => setCurrentView('explore')}
+                  onEnroll={handleEnrollAndStart}
                 />
               </div>
             )}

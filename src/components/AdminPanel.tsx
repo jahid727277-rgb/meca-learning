@@ -491,13 +491,13 @@ export const COURSES: Course[] = ${formattedCourses};
             {/* Preview Card */}
             <div className="p-5 rounded-2xl bg-neutral-50/50 border border-neutral-100 space-y-3">
               <span className="text-[9px] font-black uppercase tracking-wider text-neutral-400 block">লোগো প্রিভিউ:</span>
-              <div className="p-4 rounded-xl bg-neutral-900 inline-flex items-center justify-center">
-                <div className="h-10 w-32 relative">
-                  <ImageWithSkeleton 
+              <div className="p-4 rounded-xl bg-neutral-900 inline-flex items-center justify-center animate-fade-in">
+                <div className="h-10 w-32 relative flex items-center justify-center">
+                  <img 
                     src={brandingLogo && brandingLogo !== 'meca_learning_logo.png' && brandingLogo !== '/meca_learning_logo.png' ? brandingLogo : mecaLearningLogo} 
                     alt="Logo Preview" 
-                    className="h-full w-auto object-contain max-w-full mx-auto"
-                    containerClassName="h-full w-full"
+                    className="h-full w-auto object-contain max-w-full mx-auto select-none"
+                    referrerPolicy="no-referrer"
                   />
                 </div>
               </div>

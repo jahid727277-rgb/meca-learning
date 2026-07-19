@@ -1,5 +1,4 @@
 import React from 'react';
-import ImageWithSkeleton from './ImageWithSkeleton';
 
 const mecaLearningLogo = './logo_web.png';
 
@@ -30,12 +29,11 @@ export default function Logo({ className = '', imgClassName = '', size = 42, var
   return (
     <div className={`inline-flex items-center justify-center ${className}`}>
       <div style={{ height: size, width: 'auto' }} className="relative flex items-center justify-center">
-        <ImageWithSkeleton
+        <img
           src={currentLogo}
           alt="Meca Learning"
           style={{ height: size, width: 'auto', ...filterStyle }}
           className={`object-contain select-none max-w-full ${imgClassName}`}
-          containerClassName="w-full h-full flex items-center justify-center"
           referrerPolicy="no-referrer"
           onError={(e) => {
             const target = e.target as HTMLImageElement;

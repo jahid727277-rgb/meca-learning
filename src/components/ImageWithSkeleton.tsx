@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface ImageWithSkeletonProps {
   src?: string;
@@ -24,6 +24,22 @@ export default function ImageWithSkeleton({
 }: ImageWithSkeletonProps) {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [hasError, setHasError] = useState<boolean>(false);
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    if (!src) {
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setHasError(false);
+
+    // If image has already loaded (e.g. from cache or instantly loaded)
+    if (imgRef.current && imgRef.current.complete) {
+      setIsLoading(false);
+    }
+  }, [src]);
 
   const handleLoad = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     setIsLoading(false);
@@ -42,15 +58,33 @@ export default function ImageWithSkeleton({
 
   return (
     <div className={`relative w-full h-full overflow-hidden ${containerClassName}`}>
-      {/* Skeleton screen overlay with shimmering pulse */}
+      {/* Skeleton screen overlay with premium shimmering pulse */}
       {isLoading && (
-        <div 
-          className={`absolute inset-0 bg-neutral-200 animate-pulse flex items-center justify-center ${skeletonClassName}`}
-        />
+        <>
+          <style>{`
+            @keyframes premium-shimmer {
+              0% {
+                background-position: -200% 0;
+              }
+              100% {
+                background-position: 200% 0;
+              }
+            }
+            .premium-shimmer-bg {
+              background: linear-gradient(90deg, #f3f4f6 25%, #f9fafb 50%, #f3f4f6 75%);
+              background-size: 200% 100%;
+              animation: premium-shimmer 1.6s infinite linear;
+            }
+          `}</style>
+          <div 
+            className={`absolute inset-0 premium-shimmer-bg ${skeletonClassName}`}
+          />
+        </>
       )}
 
       {/* Actual image */}
       <img
+        ref={imgRef}
         src={src}
         alt={alt}
         onLoad={handleLoad}
@@ -63,3 +97,4 @@ export default function ImageWithSkeleton({
     </div>
   );
 }
+

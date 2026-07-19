@@ -16,6 +16,7 @@ interface StudentDashboardProps {
   onNavigate: (view: string) => void;
   onNavigateToCourse: (courseId: string) => void;
   onNavigateToExplore: () => void;
+  onEnroll: (courseId: string) => void;
 }
 
 export default function StudentDashboard({
@@ -27,6 +28,7 @@ export default function StudentDashboard({
   onNavigate,
   onNavigateToCourse,
   onNavigateToExplore,
+  onEnroll,
 }: StudentDashboardProps) {
   const [selectedCertCourseId, setSelectedCertCourseId] = useState<string | null>(null);
   
@@ -269,10 +271,10 @@ export default function StudentDashboard({
       </div>
 
       {/* 3. Enroll Courses Section */}
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div className="flex items-center justify-between border-b border-neutral-200 pb-2">
           <h3 className="text-lg font-extrabold text-neutral-900 tracking-tight">
-            Enroll courses
+            {enrolledList.length > 0 ? "Enroll courses" : "No Enrolled Courses"}
           </h3>
           <span className="text-[10px] font-bold text-neutral-500 bg-neutral-100 px-2 py-0.5 rounded border border-neutral-200">
             {enrolledList.length} total
@@ -293,18 +295,23 @@ export default function StudentDashboard({
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center text-center py-8 bg-neutral-50/50 rounded-xl border border-dashed border-neutral-200 p-4">
-            <BookOpen className="w-8 h-8 text-neutral-300 mb-2" />
-            <h4 className="text-xs font-bold text-neutral-700">কোনো কোর্স এনরোল করা নেই</h4>
-            <p className="text-[10px] text-neutral-500 max-w-xs mt-0.5 mb-3">
-              মেকা লার্নিং এর প্রিমিয়াম কোর্সগুলো দেখে আজই শুরু করুন!
-            </p>
-            <button
-              onClick={onNavigateToExplore}
-              className="px-4 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-[10px] font-bold rounded-lg transition-colors cursor-pointer"
-            >
-              Browse Syllabus Catalog
-            </button>
+          <div className="space-y-6 w-full">
+            {/* Popular Courses section directly on empty dashboard */}
+            <div>
+              <div className="mb-4">
+                <h4 className="text-lg font-extrabold text-neutral-900 tracking-tight">Popular Courses</h4>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {courses.slice(0, 3).map((course) => (
+                  <CourseCard
+                    key={course.id}
+                    course={course}
+                    onSelect={(courseId) => onNavigateToCourse(courseId)}
+                    onEnroll={onEnroll}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>
