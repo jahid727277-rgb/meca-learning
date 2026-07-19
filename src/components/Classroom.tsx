@@ -4,7 +4,7 @@ import YouTubePlayer from './YouTubePlayer';
 import { 
   Play, Pause, ArrowLeft, CheckCircle, Circle, Video, 
   BookOpen, HelpCircle, ChevronRight, Sparkles, Trophy, Award, RotateCcw,
-  FileText, X, ExternalLink
+  FileText, X, ExternalLink, ChevronDown, ChevronUp
 } from 'lucide-react';
 
 const LESSON_NOTES: { [lessonId: string]: { title: string; content: string; pdfUrl?: string } } = {
@@ -94,6 +94,11 @@ export default function Classroom({
   
   const [currentLesson, setCurrentLesson] = useState<Lesson>(initialLesson);
   const [showClassNotes, setShowClassNotes] = useState<boolean>(false);
+
+  const initialSection = course.syllabus.find((s) => s.lessons.some((l) => l.id === initialLesson.id));
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    [initialSection?.id || '']: true
+  });
 
   // Quiz state
   const [selectedAnswers, setSelectedAnswers] = useState<{ [qId: string]: number }>({});
@@ -358,64 +363,92 @@ export default function Classroom({
 
           </section>
 
-          {/* RIGHT COLUMN - Syllabus Navigation Hub (Col 4) */}
-          <aside className="lg:col-span-4 bg-white p-5 rounded-3xl border border-neutral-100 shadow-xs space-y-6 max-h-[80vh] overflow-y-auto sticky top-24">
+          {/* RIGHT COLUMN - Topic Accordion Hub (Col 4) */}
+          <aside className="lg:col-span-4 bg-white p-5 rounded-3xl border border-neutral-100 shadow-xs space-y-5 h-fit lg:sticky lg:top-24">
             <div>
-              <h3 className="text-xs font-black text-neutral-400 uppercase tracking-widest">Syllabus Directory</h3>
-              <p className="text-[11px] text-neutral-500 font-medium">Select any module below to load materials instantly.</p>
+              <h3 className="text-lg font-black text-neutral-900 tracking-tight">Topic</h3>
             </div>
 
-            <div className="space-y-6">
-              {course.syllabus.map((sec, secIdx) => (
-                <div key={sec.id} className="space-y-2.5">
-                  <h4 className="text-xs font-bold text-neutral-800 tracking-tight uppercase">
-                    {sec.title}
-                  </h4>
-                  
-                  <div className="space-y-1">
-                    {sec.lessons.map((les) => {
-                       const isSelected = currentLesson.id === les.id;
-                       const isDone = enrollment.completedLessons.includes(les.id);
-                      
-                      let iconColor = 'text-neutral-400';
-                      let labelColor = 'text-neutral-600 hover:text-neutral-900';
-                      let bgStyle = 'hover:bg-neutral-50/50';
+            <div className="space-y-3">
+              {course.syllabus.map((sec) => {
+                const isExpanded = !!expandedSections[sec.id];
+                return (
+                  <div key={sec.id} className="border border-neutral-200 rounded-2xl overflow-hidden bg-white shadow-2xs">
+                    {/* Accordion Toggle Trigger Button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setExpandedSections((prev) => ({
+                          ...prev,
+                          [sec.id]: !prev[sec.id],
+                        }));
+                      }}
+                      className="w-full text-left px-4 py-3.5 flex items-center justify-between hover:bg-neutral-50 transition-colors cursor-pointer"
+                    >
+                      <span className="text-xs font-bold text-neutral-800 tracking-tight">
+                        {sec.title}
+                      </span>
+                      {isExpanded ? (
+                        <ChevronUp className="w-4 h-4 text-neutral-900 shrink-0" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-neutral-900 shrink-0" />
+                      )}
+                    </button>
 
-                      if (isDone) {
-                        iconColor = 'text-emerald-500';
-                      }
-                      if (isSelected) {
-                        bgStyle = 'bg-orange-50 text-orange-950 font-semibold';
-                        labelColor = 'text-orange-950';
-                      }
+                    {/* Expandable content containing topic videos/lessons */}
+                    {isExpanded && (
+                      <div className="border-t border-neutral-100 bg-neutral-50/30 divide-y divide-neutral-100/60">
+                        {sec.lessons.map((les) => {
+                          const isSelected = currentLesson.id === les.id;
+                          const isDone = enrollment.completedLessons.includes(les.id);
+                          
+                          let bgStyle = 'hover:bg-neutral-100/60';
+                          let labelColor = 'text-neutral-600 hover:text-neutral-900';
+                          let itemBorder = 'border-l-2 border-transparent';
 
-                      return (
-                        <button
-                          key={les.id}
-                          onClick={() => handleLessonSelect(les)}
-                          className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs flex items-center justify-between gap-3 transition-all ${bgStyle}`}
-                        >
-                          <div className="flex items-center gap-2.5 overflow-hidden">
-                            {isDone ? (
-                              <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
-                            ) : (
-                              <Circle className="w-4 h-4 text-neutral-300 shrink-0" />
-                            )}
-                            <span className={`truncate leading-none ${labelColor}`}>{les.title}</span>
+                          if (isSelected) {
+                            bgStyle = 'bg-orange-50/80 text-orange-950 font-extrabold';
+                            labelColor = 'text-orange-950';
+                            itemBorder = 'border-l-2 border-orange-500 bg-orange-50/40';
+                          }
+
+                          return (
+                            <button
+                              key={les.id}
+                              onClick={() => handleLessonSelect(les)}
+                              className={`w-full text-left px-4 py-3.5 text-xs flex items-center justify-between gap-3 transition-all ${bgStyle} ${itemBorder}`}
+                            >
+                              <div className="flex items-start gap-2.5">
+                                {isDone ? (
+                                  <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                                ) : isSelected ? (
+                                  <Circle className="w-4 h-4 text-orange-500 shrink-0 fill-orange-50 mt-0.5" />
+                                ) : (
+                                  <Circle className="w-4 h-4 text-neutral-300 shrink-0 mt-0.5" />
+                                )}
+                                
+                                <div className="flex items-start gap-2">
+                                  <span className="shrink-0 text-neutral-400 mt-0.5">
+                                    {les.type === 'video' && <Video className="w-3.5 h-3.5" />}
+                                    {les.type === 'reading' && <BookOpen className="w-3.5 h-3.5" />}
+                                    {les.type === 'quiz' && <HelpCircle className="w-3.5 h-3.5" />}
+                                  </span>
+                                  <span className={`text-xs leading-normal font-bold ${labelColor}`}>{les.title}</span>
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                        {sec.lessons.length === 0 && (
+                          <div className="px-4 py-3.5 text-xs text-neutral-400 font-semibold italic text-center">
+                            কোনো লেসন পাওয়া যায়নি
                           </div>
-
-                          <div className="flex items-center gap-1 shrink-0 text-[10px] text-neutral-400 font-semibold">
-                            {les.type === 'video' && <Video className="w-3.5 h-3.5 text-neutral-400" />}
-                            {les.type === 'reading' && <BookOpen className="w-3.5 h-3.5 text-neutral-400" />}
-                            {les.type === 'quiz' && <HelpCircle className="w-3.5 h-3.5 text-neutral-400" />}
-                            <span>{les.duration}</span>
-                          </div>
-                        </button>
-                      );
-                    })}
+                        )}
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </aside>
 

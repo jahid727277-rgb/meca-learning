@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { Course, Lesson, SyllabusSection, Level } from '../types';
 import ImageWithSkeleton from './ImageWithSkeleton';
-
-const mecaLearningLogo = 'https://res.cloudinary.com/djjhol6dg/image/upload/v1784080493/meca_learning_logo_a3yqec.png';
 import YouTubePlayer from './YouTubePlayer';
 import { formatBDTPrice } from '../utils/currency';
 import { 
   Plus, Edit3, Trash2, Image, Link, Play, FileText, HelpCircle, 
-  Save, RotateCcw, ShieldAlert, Check, CheckCircle, ArrowRight, Eye, EyeOff,
-  Github, GitBranch, GitCommit, CloudLightning, RefreshCw, AlertCircle, Copy, Download
+  Save, RotateCcw, Check, CheckCircle, ArrowRight, Eye, EyeOff,
+  Github, CloudLightning, RefreshCw, AlertCircle, Copy, Download
 } from 'lucide-react';
+
+const mecaLearningLogo = 'https://res.cloudinary.com/djjhol6dg/image/upload/v1784080493/meca_learning_logo_a3yqec.png';
 
 interface AdminPanelProps {
   courses: Course[];
@@ -35,7 +35,7 @@ export default function AdminPanel({
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [previewingLessonId, setPreviewingLessonId] = useState<string | null>(null);
 
-  // New course / edit form states
+  // Form States
   const [formTitle, setFormTitle] = useState('');
   const [formDescription, setFormDescription] = useState('');
   const [formCategory, setFormCategory] = useState('Prompt Engineering');
@@ -44,11 +44,10 @@ export default function AdminPanel({
   const [formThumbnail, setFormThumbnail] = useState('');
   const [formInstructorName, setFormInstructorName] = useState('Dr. Sarah Jenkins');
   const [formInstructorRole, setFormInstructorRole] = useState('Associate Professor');
-  const [formInstructorAvatar, setFormInstructorAvatar] = useState('https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200');
-  const [formInstructorBio, setFormInstructorBio] = useState('Experienced robotics instructor.');
-  const [formTags, setFormTags] = useState('Robotics, Hardware');
+  const [formInstructorAvatar, setFormInstructorAvatar] = useState('');
+  const [formInstructorBio, setFormInstructorBio] = useState('');
+  const [formTags, setFormTags] = useState('');
   
-  // Custom Syllabus builder inside the course editor
   const [formSyllabus, setFormSyllabus] = useState<SyllabusSection[]>([
     {
       id: 'sec-1',
@@ -66,22 +65,18 @@ export default function AdminPanel({
     }
   ]);
 
-  // Branding states
   const [brandingLogo, setBrandingLogo] = useState(logoUrl);
 
-  // GitHub states
+  // GitHub States
   const [githubToken, setGithubToken] = useState(() => localStorage.getItem('meca_github_token') || '');
   const [githubRepo, setGithubRepo] = useState(() => localStorage.getItem('meca_github_repo') || '');
   const [githubBranch, setGithubBranch] = useState(() => localStorage.getItem('meca_github_branch') || 'main');
   const [githubFilePath, setGithubFilePath] = useState(() => localStorage.getItem('meca_github_filepath') || 'src/data/courses.ts');
   const [githubCommitMsg, setGithubCommitMsg] = useState('docs: update courses dataset from admin console');
   const [showToken, setShowToken] = useState(false);
-  
   const [isPushing, setIsPushing] = useState(false);
   const [githubStatus, setGithubStatus] = useState<{ type: 'idle' | 'success' | 'error', message: string }>({ type: 'idle', message: '' });
-  const [copiedCode, setCopiedCode] = useState(false);
 
-  // Function to generate the courses.ts code content
   const generateCoursesTS = () => {
     const formattedCourses = JSON.stringify(courses, null, 2);
     return `import { Course } from '../types';
@@ -99,9 +94,7 @@ export const COURSES: Course[] = ${formattedCourses};
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(generateCoursesTS());
-    setCopiedCode(true);
-    setTimeout(() => setCopiedCode(false), 2000);
-    showStatus("কোর্স কোড সফলভাবে ক্লিপবোর্ডে কপি করা হয়েছে!");
+    showStatus("কোর্স কোড ক্লিপবোর্ডে কপি করা হয়েছে!");
   };
 
   const handleDownloadFile = () => {
@@ -112,19 +105,18 @@ export const COURSES: Course[] = ${formattedCourses};
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
-    showStatus("courses.ts ফাইলটি সফলভাবে ডাউনলোড করা হয়েছে!");
+    showStatus("courses.ts ফাইল ডাউনলোড করা হয়েছে!");
   };
 
   const handlePushToGithub = async () => {
     if (!githubToken.trim() || !githubRepo.trim() || !githubBranch.trim()) {
       setGithubStatus({ 
         type: 'error', 
-        message: 'অনুগ্রহ করে GitHub Token, Repository (username/repo) এবং Branch সঠিক ভাবে প্রদান করুন।' 
+        message: 'GitHub Token, Repository এবং Branch প্রদান করুন।' 
       });
       return;
     }
 
-    // Save configuration settings
     localStorage.setItem('meca_github_token', githubToken);
     localStorage.setItem('meca_github_repo', githubRepo);
     localStorage.setItem('meca_github_branch', githubBranch);
@@ -137,7 +129,6 @@ export const COURSES: Course[] = ${formattedCourses};
       const fileContent = generateCoursesTS();
       const encodedContent = btoa(unescape(encodeURIComponent(fileContent)));
       
-      // 1. Get SHA of the existing file (if any)
       const getFileUrl = `https://api.github.com/repos/${githubRepo}/contents/${githubFilePath}?ref=${githubBranch}`;
       let existingFileSha = '';
       
@@ -154,10 +145,9 @@ export const COURSES: Course[] = ${formattedCourses};
           existingFileSha = data.sha;
         }
       } catch (err) {
-        console.log("File might not exist yet. Proceeding without SHA.");
+        console.log("File may not exist yet.");
       }
 
-      // 2. Put file content
       const putFileUrl = `https://api.github.com/repos/${githubRepo}/contents/${githubFilePath}`;
       const body: any = {
         message: githubCommitMsg || 'docs: update courses dataset from admin console',
@@ -180,24 +170,22 @@ export const COURSES: Course[] = ${formattedCourses};
       });
 
       if (putResponse.ok) {
-        const result = await putResponse.json();
         setGithubStatus({ 
           type: 'success', 
-          message: `সফলভাবে GitHub এ পুশ করা হয়েছে! Commit URL: ${result.commit.html_url}` 
+          message: `সফলভাবে GitHub এ পুশ করা হয়েছে!` 
         });
-        showStatus("GitHub সিঙ্ক সফলভাবে সম্পন্ন হয়েছে!");
+        showStatus("GitHub সিঙ্ক সফল হয়েছে!");
       } else {
         const errorData = await putResponse.json();
         setGithubStatus({ 
           type: 'error', 
-          message: `ভুল ত্রুটি হয়েছে: ${errorData.message || putResponse.statusText}` 
+          message: `ত্রুটি: ${errorData.message || putResponse.statusText}` 
         });
       }
     } catch (error: any) {
-      console.error(error);
       setGithubStatus({ 
         type: 'error', 
-        message: `নেটওয়ার্ক সংযোগ বা API ত্রুটি: ${error?.message || error}` 
+        message: `API ত্রুটি: ${error?.message || error}` 
       });
     } finally {
       setIsPushing(false);
@@ -206,15 +194,15 @@ export const COURSES: Course[] = ${formattedCourses};
 
   const showStatus = (text: string, type: 'success' | 'error' = 'success') => {
     setStatusMessage({ type, text });
-    setTimeout(() => setStatusMessage(null), 4000);
+    setTimeout(() => setStatusMessage(null), 3000);
   };
 
   const handleResetDB = async () => {
-    if (!window.confirm("আপনি কি নিশ্চিত যে ফায়ারবেসের বর্তমান সব ডেটা মুছে ডিফল্ট ডেটা দিয়ে ডেটাবেস রিসেট করতে চান?")) return;
+    if (!window.confirm("আপনি কি ডেটাবেস রিসেট করতে চান?")) return;
     setIsResetting(true);
     try {
       await onResetDatabase();
-      showStatus("ডেটাবেস সফলভাবে মুছে রিসেট করা হয়েছে!");
+      showStatus("ডেটাবেস রিসেট করা হয়েছে!");
     } catch (e) {
       showStatus("রিসেট করতে ত্রুটি হয়েছে।", "error");
     } finally {
@@ -251,8 +239,8 @@ export const COURSES: Course[] = ${formattedCourses};
     setFormInstructorName('Abrar Chowdhury');
     setFormInstructorRole('AI Research Architect');
     setFormInstructorAvatar('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200');
-    setFormInstructorBio('Expert in artificial intelligence and automation programming.');
-    setFormTags('AI, LLMs, Automation');
+    setFormInstructorBio('Expert in artificial intelligence.');
+    setFormTags('AI, LLMs');
     setFormSyllabus([
       {
         id: 'sec-1',
@@ -264,7 +252,7 @@ export const COURSES: Course[] = ${formattedCourses};
             duration: '08:30',
             type: 'video',
             videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-            content: 'Welcome to this brand new course! Check out the syllabus guidelines.'
+            content: ''
           }
         ]
       }
@@ -273,7 +261,7 @@ export const COURSES: Course[] = ${formattedCourses};
 
   const handleSaveCourse = () => {
     if (!formTitle.trim()) {
-      showStatus("কোর্সের টাইটেল দেওয়া আবশ্যক!", "error");
+      showStatus("কোর্সের টাইটেল আবশ্যক!", "error");
       return;
     }
 
@@ -302,28 +290,27 @@ export const COURSES: Course[] = ${formattedCourses};
       syllabus: formSyllabus
     };
 
-    let updatedCoursesListList: Course[] = [];
+    let updatedCoursesList: Course[] = [];
     if (editingCourse) {
-      updatedCoursesListList = courses.map(c => c.id === editingCourse.id ? updatedOrNewCourse : c);
-      showStatus("কোর্সটি সফলভাবে আপডেট করা হয়েছে!");
+      updatedCoursesList = courses.map(c => c.id === editingCourse.id ? updatedOrNewCourse : c);
+      showStatus("কোর্স আপডেট করা হয়েছে!");
     } else {
-      updatedCoursesListList = [...courses, updatedOrNewCourse];
-      showStatus("নতুন কোর্সটি সফলভাবে তৈরি করা হয়েছে!");
+      updatedCoursesList = [...courses, updatedOrNewCourse];
+      showStatus("নতুন কোর্স তৈরি করা হয়েছে!");
     }
 
-    onUpdateCourses(updatedCoursesListList);
+    onUpdateCourses(updatedCoursesList);
     setEditingCourse(null);
     setIsAddingNew(false);
   };
 
   const handleDeleteCourse = (courseId: string) => {
-    if (!window.confirm("আপনি কি নিশ্চিতভাবে এই কোর্সটি মুছে ফেলতে চান?")) return;
+    if (!window.confirm("আপনি কি এই কোর্সটি মুছে ফেলতে চান?")) return;
     const filtered = courses.filter(c => c.id !== courseId);
     onUpdateCourses(filtered);
     showStatus("কোর্সটি মুছে ফেলা হয়েছে!");
   };
 
-  // Syllabus modifiers helpers
   const handleAddSyllabusSection = () => {
     const newSection: SyllabusSection = {
       id: `sec-${Date.now()}`,
@@ -349,11 +336,11 @@ export const COURSES: Course[] = ${formattedCourses};
     const copy = [...formSyllabus];
     const newLesson: Lesson = {
       id: `les-${Date.now()}`,
-      title: 'New Lesson Video/Quiz',
+      title: 'New Lesson',
       duration: '10:00',
       type: 'video',
       videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-      content: 'New content text.'
+      content: ''
     };
     copy[secIndex].lessons.push(newLesson);
     setFormSyllabus(copy);
@@ -387,20 +374,18 @@ export const COURSES: Course[] = ${formattedCourses};
         <div>
           <div className="flex items-center gap-2">
             <span className="px-2.5 py-0.5 rounded-md bg-orange-100 text-orange-700 text-[10px] font-black uppercase tracking-wider">
-              Admin Console
+              Admin Panel
             </span>
             {userEmail && (
               <span className="text-[11px] text-neutral-400 font-bold">
-                Logged in as: {userEmail}
+                Logged in: {userEmail}
               </span>
             )}
           </div>
           <h2 className="text-2xl font-black text-neutral-900 tracking-tight mt-1">
             ম্যাকা লার্নিং এডমিন প্যানেল
           </h2>
-          <p className="text-xs text-neutral-500 font-semibold mt-0.5">
-            এখান থেকে আপনি লোগো পরিবর্তন, কোর্স এডিট, নতুন ভিডিও কোর্স ইউটিউব লিংকসহ যুক্ত ও ম্যানেজ করতে পারবেন।
-          </p>
+          <p className="text-xs text-neutral-500 font-medium mt-0.5">কোর্স এবং ব্র্যান্ডিং কনফিগারেশন প্যানেল।</p>
         </div>
 
         {/* Action Buttons */}
@@ -428,7 +413,7 @@ export const COURSES: Course[] = ${formattedCourses};
 
       {/* STATUS NOTIFICATION TOAST */}
       {statusMessage && (
-        <div className={`p-4 rounded-2xl mb-6 flex items-center gap-3 animate-slideIn border ${
+        <div className={`p-4 rounded-2xl mb-6 flex items-center gap-3 border ${
           statusMessage.type === 'success' 
             ? 'bg-green-50 text-green-800 border-green-100' 
             : 'bg-red-50 text-red-800 border-red-100'
@@ -440,7 +425,7 @@ export const COURSES: Course[] = ${formattedCourses};
 
       {/* TAB NAVIGATION */}
       {!editingCourse && !isAddingNew && (
-        <div className="flex gap-2 border-b border-neutral-100 mb-8 pb-px overflow-x-auto whitespace-nowrap scrollbar-none">
+        <div className="flex gap-2 border-b border-neutral-100 mb-8 pb-px overflow-x-auto whitespace-nowrap">
           <button
             onClick={() => setActiveTab('courses')}
             className={`px-4 pb-3.5 text-xs font-extrabold tracking-wider uppercase border-b-2 transition-all cursor-pointer ${
@@ -459,7 +444,7 @@ export const COURSES: Course[] = ${formattedCourses};
                 : 'border-transparent text-neutral-400 hover:text-neutral-600'
             }`}
           >
-            লোগো ও ছবি ব্র্যান্ডিং
+            ব্র্যান্ডিং লোগো
           </button>
           <button
             onClick={() => setActiveTab('github')}
@@ -469,7 +454,7 @@ export const COURSES: Course[] = ${formattedCourses};
                 : 'border-transparent text-neutral-400 hover:text-neutral-600'
             }`}
           >
-            GitHub সিঙ্ক ম্যানেজার 🚀
+            GitHub সিঙ্ক
           </button>
         </div>
       )}
@@ -479,11 +464,8 @@ export const COURSES: Course[] = ${formattedCourses};
         <div className="bg-white rounded-3xl border border-neutral-100 shadow-xs p-6 md:p-8 max-w-2xl">
           <h3 className="text-sm font-black text-neutral-900 uppercase tracking-wider mb-4 flex items-center gap-1.5">
             <Image className="w-4.5 h-4.5 text-orange-500" />
-            লোগো লিংক কনফিগারেশন
+            লোগো কনফিগারেশন
           </h3>
-          <p className="text-xs text-neutral-500 font-semibold mb-6">
-            আপনার ম্যাকা লার্নিং ওয়েবসাইটের প্রধান লোগোটি পরিবর্তন করতে নিচে একটি নতুন ইমেজ লিংক বসিয়ে সেভ করুন।
-          </p>
 
           <div className="space-y-5">
             <div>
@@ -501,14 +483,14 @@ export const COURSES: Course[] = ${formattedCourses};
                   className="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer shrink-0"
                 >
                   <Save className="w-3.5 h-3.5" />
-                  সেভ করুন
+                  সেভ
                 </button>
               </div>
             </div>
 
             {/* Preview Card */}
             <div className="p-5 rounded-2xl bg-neutral-50/50 border border-neutral-100 space-y-3">
-              <span className="text-[9px] font-black uppercase tracking-wider text-neutral-400 block">বর্তমান লোগো প্রিভিউ:</span>
+              <span className="text-[9px] font-black uppercase tracking-wider text-neutral-400 block">লোগো প্রিভিউ:</span>
               <div className="p-4 rounded-xl bg-neutral-900 inline-flex items-center justify-center">
                 <div className="h-10 w-32 relative">
                   <ImageWithSkeleton 
@@ -519,9 +501,6 @@ export const COURSES: Course[] = ${formattedCourses};
                   />
                 </div>
               </div>
-              <p className="text-[10px] text-neutral-400 font-semibold leading-relaxed">
-                * যদি ইমেজটি ইনভ্যালিড হয়, তবে সিস্টেম ডিফল্ট লোগোটি প্রদর্শন করবে।
-              </p>
             </div>
           </div>
         </div>
@@ -529,7 +508,7 @@ export const COURSES: Course[] = ${formattedCourses};
 
       {/* GITHUB SYNC TAB CONTENT */}
       {activeTab === 'github' && !editingCourse && !isAddingNew && (
-        <div className="space-y-8 animate-fadeIn">
+        <div className="space-y-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             
             {/* LEFT COLUMN: GitHub Direct API Push Form */}
@@ -537,11 +516,8 @@ export const COURSES: Course[] = ${formattedCourses};
               <div>
                 <h3 className="text-sm font-black text-neutral-900 uppercase tracking-wider flex items-center gap-2">
                   <Github className="w-5 h-5 text-neutral-950" />
-                  GitHub অটোমেটিক রিপোজিটরি পুশ (API Sync)
+                  GitHub সিঙ্ক ম্যানেজার (Sync)
                 </h3>
-                <p className="text-xs text-neutral-500 font-semibold mt-1 leading-relaxed">
-                  আপনার এডমিন প্যানেলের পরিবর্তনগুলো সরাসরি আপনার GitHub রিপোজিটরিতে সেভ করতে চান? নিচে আপনার GitHub Details দিন। এটি ব্রাউজারের সুরক্ষায় লোকাল স্টোরেজে সেভ থাকবে।
-                </p>
               </div>
 
               <div className="space-y-4">
@@ -559,7 +535,7 @@ export const COURSES: Course[] = ${formattedCourses};
                         setGithubToken(val);
                         localStorage.setItem('meca_github_token', val);
                       }}
-                      className="w-full pl-4 pr-11 py-2.5 bg-neutral-50 hover:bg-neutral-100/50 focus:bg-white border border-neutral-200 text-neutral-800 text-xs font-mono rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all placeholder:text-neutral-300"
+                      className="w-full pl-4 pr-11 py-2.5 bg-neutral-50 hover:bg-neutral-100/50 focus:bg-white border border-neutral-200 text-neutral-800 text-xs font-mono rounded-xl focus:outline-none"
                       placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
                     />
                     <button
@@ -567,23 +543,16 @@ export const COURSES: Course[] = ${formattedCourses};
                       onClick={() => setShowToken(!showToken)}
                       className="absolute right-3 text-neutral-400 hover:text-neutral-600 transition-colors focus:outline-none cursor-pointer p-1"
                     >
-                      {showToken ? (
-                        <EyeOff className="w-4 h-4" />
-                      ) : (
-                        <Eye className="w-4 h-4" />
-                      )}
+                      {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
-                  <p className="text-[10px] text-neutral-400 font-medium mt-1">
-                    * অবশ্যই আপনার টোকেনে `repo` বা `public_repo` লিখার অনুমতি (Write Access) থাকতে হবে।
-                  </p>
                 </div>
 
                 {/* Grid for Repo and Branch */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-[10px] font-black uppercase tracking-wider text-neutral-400 block mb-1.5">
-                      Repo Name (username/repo-name):
+                      Repository (username/repo):
                     </label>
                     <input
                       type="text"
@@ -593,13 +562,13 @@ export const COURSES: Course[] = ${formattedCourses};
                         setGithubRepo(val);
                         localStorage.setItem('meca_github_repo', val);
                       }}
-                      className="w-full px-4 py-2.5 bg-neutral-50 hover:bg-neutral-100/50 focus:bg-white border border-neutral-200 text-neutral-800 text-xs font-medium rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all placeholder:text-neutral-300"
-                      placeholder="jahid1882008/meca-learning"
+                      className="w-full px-4 py-2.5 bg-neutral-50 hover:bg-neutral-100/50 focus:bg-white border border-neutral-200 text-neutral-800 text-xs font-medium rounded-xl focus:outline-none"
+                      placeholder="username/repo-name"
                     />
                   </div>
                   <div>
                     <label className="text-[10px] font-black uppercase tracking-wider text-neutral-400 block mb-1.5">
-                      Target Branch Name:
+                      Branch Name:
                     </label>
                     <input
                       type="text"
@@ -609,7 +578,7 @@ export const COURSES: Course[] = ${formattedCourses};
                         setGithubBranch(val);
                         localStorage.setItem('meca_github_branch', val);
                       }}
-                      className="w-full px-4 py-2.5 bg-neutral-50 hover:bg-neutral-100/50 focus:bg-white border border-neutral-200 text-neutral-800 text-xs font-medium rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all placeholder:text-neutral-300"
+                      className="w-full px-4 py-2.5 bg-neutral-50 hover:bg-neutral-100/50 focus:bg-white border border-neutral-200 text-neutral-800 text-xs font-medium rounded-xl focus:outline-none"
                       placeholder="main"
                     />
                   </div>
@@ -619,7 +588,7 @@ export const COURSES: Course[] = ${formattedCourses};
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-[10px] font-black uppercase tracking-wider text-neutral-400 block mb-1.5">
-                      Dataset File Path:
+                      File Path:
                     </label>
                     <input
                       type="text"
@@ -629,7 +598,7 @@ export const COURSES: Course[] = ${formattedCourses};
                         setGithubFilePath(val);
                         localStorage.setItem('meca_github_filepath', val);
                       }}
-                      className="w-full px-4 py-2.5 bg-neutral-50 hover:bg-neutral-100/50 focus:bg-white border border-neutral-200 text-neutral-800 text-xs font-medium rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+                      className="w-full px-4 py-2.5 bg-neutral-50 hover:bg-neutral-100/50 focus:bg-white border border-neutral-200 text-neutral-800 text-xs font-medium rounded-xl focus:outline-none"
                       placeholder="src/data/courses.ts"
                     />
                   </div>
@@ -641,8 +610,8 @@ export const COURSES: Course[] = ${formattedCourses};
                       type="text"
                       value={githubCommitMsg}
                       onChange={(e) => setGithubCommitMsg(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-neutral-50 hover:bg-neutral-100/50 focus:bg-white border border-neutral-200 text-neutral-800 text-xs font-medium rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
-                      placeholder="docs: update courses dataset from admin console"
+                      className="w-full px-4 py-2.5 bg-neutral-50 hover:bg-neutral-100/50 focus:bg-white border border-neutral-200 text-neutral-800 text-xs font-medium rounded-xl focus:outline-none"
+                      placeholder="update courses dataset"
                     />
                   </div>
                 </div>
@@ -652,20 +621,20 @@ export const COURSES: Course[] = ${formattedCourses};
                   <button
                     onClick={handlePushToGithub}
                     disabled={isPushing}
-                    className="w-full py-3.5 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 disabled:bg-neutral-300 text-white text-xs font-black rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer border border-orange-400/20"
+                    className="w-full py-3.5 bg-orange-500 hover:bg-orange-600 disabled:bg-neutral-300 text-white text-xs font-black rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer border border-orange-400/20"
                   >
                     {isPushing ? (
                       <RefreshCw className="w-4 h-4 animate-spin" />
                     ) : (
-                      <CloudLightning className="w-4 h-4 text-white animate-pulse" />
+                      <CloudLightning className="w-4 h-4 text-white" />
                     )}
-                    {isPushing ? 'GitHub এ ফাইল সিঙ্ক হচ্ছে...' : 'সরাসরি GitHub এ পরিবর্তন পুশ করুন (Sync)'}
+                    {isPushing ? 'GitHub এ পুশ হচ্ছে...' : 'GitHub এ পরিবর্তন পুশ করুন'}
                   </button>
                 </div>
 
                 {/* API Response Status Banner */}
                 {githubStatus.type !== 'idle' && (
-                  <div className={`p-4 rounded-xl border flex items-start gap-3 animate-fadeIn text-xs ${
+                  <div className={`p-4 rounded-xl border flex items-start gap-3 text-xs ${
                     githubStatus.type === 'success' 
                       ? 'bg-green-50 text-green-800 border-green-100' 
                       : 'bg-red-50 text-red-800 border-red-100'
@@ -677,32 +646,22 @@ export const COURSES: Course[] = ${formattedCourses};
                         <AlertCircle className="w-4 h-4 text-red-600" />
                       )}
                     </div>
-                    <div className="space-y-1 font-semibold leading-normal">
+                    <div className="font-semibold leading-normal">
                       <p>{githubStatus.message}</p>
-                      {githubStatus.type === 'success' && (
-                        <span className="text-[10px] text-green-600 underline font-bold block">
-                          * অভিনন্দন! আপনার ডেটাসেট এখন সফলভাবে গিটহাবে লাইভ রয়েছে।
-                        </span>
-                      )}
                     </div>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* RIGHT COLUMN: Static Download & Built-in Guide */}
+            {/* RIGHT COLUMN: Static Download & Copy Code */}
             <div className="lg:col-span-5 space-y-6">
-              
-              {/* Card A: Easy Manual Sync (Code Export) */}
               <div className="bg-white rounded-3xl border border-neutral-100 shadow-xs p-6 space-y-4">
                 <div>
                   <h4 className="text-xs font-black text-neutral-900 uppercase tracking-wider flex items-center gap-2">
                     <Download className="w-4.5 h-4.5 text-orange-500" />
-                    ম্যানুয়াল কোড এক্সপোর্ট (সম্পূর্ণ নিরাপদ)
+                    কোড এক্সপোর্ট
                   </h4>
-                  <p className="text-[11px] text-neutral-500 font-medium mt-1 leading-normal">
-                    আপনার যদি GitHub API বা টোকেন ব্যবহার করতে কোনো দ্বিধা থাকে, তবে নিচের কোড এক্সপোর্ট অপশনগুলো দিয়ে সহজে নিজের ফাইলে বসাতে পারেন:
-                  </p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -711,61 +670,22 @@ export const COURSES: Course[] = ${formattedCourses};
                     className="flex items-center justify-center gap-2 py-2.5 bg-orange-50 hover:bg-orange-100/80 text-orange-700 border border-orange-100 text-[11px] font-bold rounded-xl transition-all cursor-pointer"
                   >
                     <Download className="w-3.5 h-3.5" />
-                    ফাইল ডাউনলোড করুন
+                    ডাউনলোড ফাইল
                   </button>
                   <button
                     onClick={handleCopyCode}
                     className="flex items-center justify-center gap-2 py-2.5 bg-neutral-50 hover:bg-neutral-100 text-neutral-700 border border-neutral-100 text-[11px] font-bold rounded-xl transition-all cursor-pointer"
                   >
                     <Copy className="w-3.5 h-3.5" />
-                    কোড কপি করুন
+                    কোড কপি
                   </button>
                 </div>
 
                 <div className="p-3.5 rounded-xl bg-neutral-50 border border-neutral-100">
                   <span className="text-[9px] font-black uppercase tracking-wider text-neutral-400 block mb-1">ফাইল পাথ:</span>
                   <code className="text-[10px] font-mono text-neutral-800 font-bold">src/data/courses.ts</code>
-                  <p className="text-[10px] text-neutral-400 font-medium mt-1 leading-snug">
-                    * ডাউনলোড করা ফাইল বা কপি করা কোডটি আপনার গিটহাব রিপোজিটরির এই ফাইলে পেস্ট করে কমিট করে দিলেই সব আপডেট হয়ে যাবে।
-                  </p>
                 </div>
               </div>
-
-              {/* Card B: AI Studio IDE Sync Integration Guide */}
-              <div className="bg-neutral-900 rounded-3xl text-white p-6 space-y-4">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-orange-500">
-                    <Github className="w-4.5 h-4.5 text-white" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-black uppercase tracking-wider text-white">
-                      AI Studio Workspace Sync
-                    </h4>
-                    <span className="text-[10px] text-neutral-400 font-semibold block">প্লাটফর্মের বিল্ট-ইন সিঙ্ক গাইড</span>
-                  </div>
-                </div>
-
-                <p className="text-[11px] text-neutral-300 font-medium leading-relaxed">
-                  গিটহাবে হোস্ট করা এই অ্যাপ্লিকেশনটিতে কোড পরিবর্তন সংরক্ষণ করতে AI Studio এর বিল্ট-ইন গিটহাব কানেকশনও ব্যবহার করতে পারেন:
-                </p>
-
-                <ol className="space-y-3 text-[11px] font-semibold text-neutral-400 list-decimal pl-4 leading-normal">
-                  <li>
-                    ডান পাশের উপরে অবস্থিত <strong className="text-white">Settings (গিয়ার আইকন)</strong> এ ক্লিক করুন।
-                  </li>
-                  <li>
-                    সেখান থেকে <strong className="text-white">"Sync with GitHub"</strong> বা <strong className="text-white">"Export to GitHub"</strong> অপশনটি সিলেক্ট করুন।
-                  </li>
-                  <li>
-                    আপনার GitHub অ্যাকাউন্টটি কানেক্ট ও অথরাইজ করে সরাসরি রিপোজিটরি সিঙ্ক করে ফেলুন।
-                  </li>
-                </ol>
-
-                <div className="pt-2 border-t border-neutral-800 text-[10px] text-neutral-500 font-medium leading-normal">
-                  * এডমিন প্যানেলের লাইভ ডাটা ফায়ারবেসে স্টোর হয়, তাই গিটহাবে কোড আপডেট করার পর ডাটাবেসের ডাটাগুলো সুরক্ষিত ও আপ-টু-ডেট থাকবে।
-                </div>
-              </div>
-
             </div>
           </div>
 
@@ -773,8 +693,7 @@ export const COURSES: Course[] = ${formattedCourses};
           <div className="bg-white rounded-3xl border border-neutral-100 p-6 shadow-xs">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h4 className="text-xs font-black text-neutral-900 uppercase tracking-wider">সিঙ্কযোগ্য ডেটাবেস কোড প্রিভিউ (Courses Dataset Preview)</h4>
-                <p className="text-[10px] text-neutral-400 font-semibold mt-0.5">গিটহাবে সিঙ্ক হওয়ার পূর্বে বর্তমান ডেটাবেসের কোর্স ডেটা স্ট্রাকচার দেখে নিন</p>
+                <h4 className="text-xs font-black text-neutral-900 uppercase tracking-wider">কোর্স ডেটা প্রিভিউ</h4>
               </div>
               <button 
                 onClick={handleCopyCode}
@@ -785,7 +704,7 @@ export const COURSES: Course[] = ${formattedCourses};
               </button>
             </div>
             
-            <div className="relative rounded-2xl bg-neutral-950 p-4 max-h-60 overflow-y-auto scrollbar-thin border border-neutral-900">
+            <div className="relative rounded-2xl bg-neutral-950 p-4 max-h-60 overflow-y-auto border border-neutral-900">
               <pre className="text-[10px] font-mono text-neutral-300 leading-normal">
                 {generateCoursesTS().substring(0, 1000)}
                 {"\n\n/* ... (আরো অনেক ডাটা নিচে রয়েছে, কপি বা ডাউনলোড বাটনে ক্লিক করে পুরো ফাইলটি পাবেন) */"}
@@ -806,7 +725,6 @@ export const COURSES: Course[] = ${formattedCourses};
                 className="bg-white rounded-3xl border border-neutral-100 shadow-xs hover:shadow-md transition-all overflow-hidden flex flex-col justify-between"
               >
                 <div>
-                  {/* Course Thumbnail */}
                   <div className="relative aspect-video w-full bg-neutral-100 overflow-hidden">
                     <ImageWithSkeleton 
                       src={course.thumbnail} 
@@ -881,7 +799,7 @@ export const COURSES: Course[] = ${formattedCourses};
                 {editingCourse ? "কোর্স মডিফায়ার" : "নতুন কোর্স ক্রিয়েটর"}
               </span>
               <h3 className="text-lg font-black text-neutral-900 leading-tight">
-                {editingCourse ? "কোর্সের তথ্য এবং সিলেবাস এডিট করুন" : "ইউটিউব সিলেবাসসহ নতুন কোর্স যোগ করুন"}
+                {editingCourse ? "কোর্সের তথ্য এবং সিলেবাস এডিট করুন" : "নতুন কোর্স যোগ করুন"}
               </h3>
             </div>
             
@@ -929,7 +847,7 @@ export const COURSES: Course[] = ${formattedCourses};
                   <select
                     value={formCategory}
                     onChange={(e) => setFormCategory(e.target.value)}
-                    className="w-full px-3 py-2 bg-neutral-50 border border-neutral-200 text-neutral-800 text-xs font-bold rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all cursor-pointer"
+                    className="w-full px-3 py-2 bg-neutral-50 border border-neutral-200 text-neutral-800 text-xs font-bold rounded-xl focus:outline-none cursor-pointer"
                   >
                     <option value="Prompt Engineering">Prompt Engineering</option>
                     <option value="AI Agents">AI Agents</option>
@@ -942,7 +860,7 @@ export const COURSES: Course[] = ${formattedCourses};
                   <select
                     value={formLevel}
                     onChange={(e) => setFormLevel(e.target.value as Level)}
-                    className="w-full px-3 py-2 bg-neutral-50 border border-neutral-200 text-neutral-800 text-xs font-bold rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all cursor-pointer"
+                    className="w-full px-3 py-2 bg-neutral-50 border border-neutral-200 text-neutral-800 text-xs font-bold rounded-xl focus:outline-none cursor-pointer"
                   >
                     <option value="Beginner">Beginner</option>
                     <option value="Intermediate">Intermediate</option>
@@ -954,23 +872,23 @@ export const COURSES: Course[] = ${formattedCourses};
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-wider text-neutral-400 block mb-1">
-                    কোর্স ফি ($ USD) • বাংলা টাকায়: <span className="text-orange-600 font-bold">{formatBDTPrice(formPrice)}</span>
+                    কোর্স ফি: <span className="text-orange-600 font-bold">{formatBDTPrice(formPrice)}</span>
                   </label>
                   <input
                     type="number"
                     value={formPrice}
                     onChange={(e) => setFormPrice(Number(e.target.value))}
-                    className="w-full px-4 py-2 bg-neutral-50 hover:bg-neutral-100/50 focus:bg-white border border-neutral-200 text-neutral-800 text-xs font-medium rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+                    className="w-full px-4 py-2 bg-neutral-50 hover:bg-neutral-100/50 focus:bg-white border border-neutral-200 text-neutral-800 text-xs font-medium rounded-xl focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-black uppercase tracking-wider text-neutral-400 block mb-1">ট্যাগ সমূহ (Tags, কমা দিয়ে):</label>
+                  <label className="text-[10px] font-black uppercase tracking-wider text-neutral-400 block mb-1">ট্যাগ সমূহ (কমা দিয়ে):</label>
                   <input
                     type="text"
                     value={formTags}
                     onChange={(e) => setFormTags(e.target.value)}
-                    className="w-full px-4 py-2 bg-neutral-50 hover:bg-neutral-100/50 focus:bg-white border border-neutral-200 text-neutral-800 text-xs font-medium rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+                    className="w-full px-4 py-2 bg-neutral-50 hover:bg-neutral-100/50 focus:bg-white border border-neutral-200 text-neutral-800 text-xs font-medium rounded-xl focus:outline-none"
                     placeholder="Arduino, Hardware, Electronics"
                   />
                 </div>
@@ -982,7 +900,7 @@ export const COURSES: Course[] = ${formattedCourses};
                   type="text"
                   value={formThumbnail}
                   onChange={(e) => setFormThumbnail(e.target.value)}
-                  className="w-full px-4 py-2 bg-neutral-50 hover:bg-neutral-100/50 focus:bg-white border border-neutral-200 text-neutral-800 text-xs font-medium rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+                  className="w-full px-4 py-2 bg-neutral-50 hover:bg-neutral-100/50 focus:bg-white border border-neutral-200 text-neutral-800 text-xs font-medium rounded-xl focus:outline-none"
                   placeholder="https://images.unsplash.com/..."
                 />
               </div>
@@ -993,53 +911,52 @@ export const COURSES: Course[] = ${formattedCourses};
               <span className="text-[9px] uppercase font-black tracking-wider text-neutral-400 block">ইনস্ট্রাক্টর পরিচিতি:</span>
               
               <div>
-                <label className="text-[10px] font-black uppercase tracking-wider text-neutral-400 block mb-1">ইনস্ট্রাক্টরের নাম (Instructor Name):</label>
+                <label className="text-[10px] font-black uppercase tracking-wider text-neutral-400 block mb-1">ইনস্ট্রাক্টরের নাম:</label>
                 <input
                   type="text"
                   value={formInstructorName}
                   onChange={(e) => setFormInstructorName(e.target.value)}
-                  className="w-full px-4 py-2 bg-white border border-neutral-200 text-neutral-800 text-xs font-medium rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+                  className="w-full px-4 py-2 bg-white border border-neutral-200 text-neutral-800 text-xs font-medium rounded-xl focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="text-[10px] font-black uppercase tracking-wider text-neutral-400 block mb-1">রোল / পদবী (Role):</label>
+                <label className="text-[10px] font-black uppercase tracking-wider text-neutral-400 block mb-1">পদবী/রোল:</label>
                 <input
                   type="text"
                   value={formInstructorRole}
                   onChange={(e) => setFormInstructorRole(e.target.value)}
-                  className="w-full px-4 py-2 bg-white border border-neutral-200 text-neutral-800 text-xs font-medium rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+                  className="w-full px-4 py-2 bg-white border border-neutral-200 text-neutral-800 text-xs font-medium rounded-xl focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="text-[10px] font-black uppercase tracking-wider text-neutral-400 block mb-1">ইনস্ট্রাক্টর ছবি লিংক (Avatar Link):</label>
+                <label className="text-[10px] font-black uppercase tracking-wider text-neutral-400 block mb-1">ছবি লিংক:</label>
                 <input
                   type="text"
                   value={formInstructorAvatar}
                   onChange={(e) => setFormInstructorAvatar(e.target.value)}
-                  className="w-full px-4 py-2 bg-white border border-neutral-200 text-neutral-800 text-xs font-medium rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+                  className="w-full px-4 py-2 bg-white border border-neutral-200 text-neutral-800 text-xs font-medium rounded-xl focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="text-[10px] font-black uppercase tracking-wider text-neutral-400 block mb-1">সংক্ষিপ্ত বায়ো (Bio):</label>
+                <label className="text-[10px] font-black uppercase tracking-wider text-neutral-400 block mb-1">সংক্ষিপ্ত বায়ো:</label>
                 <textarea
                   value={formInstructorBio}
                   onChange={(e) => setFormInstructorBio(e.target.value)}
                   rows={2}
-                  className="w-full px-4 py-2 bg-white border border-neutral-200 text-neutral-800 text-xs font-medium rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+                  className="w-full px-4 py-2 bg-white border border-neutral-200 text-neutral-800 text-xs font-medium rounded-xl focus:outline-none"
                 />
               </div>
             </div>
           </div>
 
-          {/* SYLLABUS BUILDER (DYNAMIC SECTIONS AND LESSONS) */}
+          {/* SYLLABUS BUILDER */}
           <div className="space-y-4 border-t border-neutral-100 pt-6">
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="text-xs font-black text-neutral-900 uppercase tracking-wider">সিলেবাস ও লেসন ডিরেক্টরি</h4>
-                <p className="text-[10px] text-neutral-500 font-semibold">কোর্সের জন্য নতুন সেকশন ও ভিডিও লেসন ইউটিউব লিংক দিয়ে তৈরি করুন।</p>
               </div>
               <button
                 type="button"
@@ -1064,8 +981,8 @@ export const COURSES: Course[] = ${formattedCourses};
                         type="text"
                         value={section.title}
                         onChange={(e) => handleUpdateSectionTitle(secIndex, e.target.value)}
-                        className="flex-1 bg-white border border-neutral-200 px-3 py-1 rounded-lg text-xs font-bold focus:outline-none focus:border-orange-500"
-                        placeholder="সেকশনের নাম লিখুন"
+                        className="flex-1 bg-white border border-neutral-200 px-3 py-1 rounded-lg text-xs font-bold focus:outline-none"
+                        placeholder="সেকশনের নাম"
                       />
                     </div>
                     
@@ -1104,8 +1021,8 @@ export const COURSES: Course[] = ${formattedCourses};
                                 type="text"
                                 value={lesson.title}
                                 onChange={(e) => handleUpdateLesson(secIndex, lesIndex, 'title', e.target.value)}
-                                className="w-full bg-neutral-50/50 border border-neutral-200 px-3 py-1.5 rounded-xl text-xs font-semibold focus:outline-none focus:border-orange-500"
-                                placeholder="লেসন টাইটেল লিখুন"
+                                className="w-full bg-neutral-50/50 border border-neutral-200 px-3 py-1.5 rounded-xl text-xs font-semibold focus:outline-none"
+                                placeholder="লেসন টাইটেল"
                               />
                             </div>
 
@@ -1114,7 +1031,7 @@ export const COURSES: Course[] = ${formattedCourses};
                               <select
                                 value={lesson.type}
                                 onChange={(e) => handleUpdateLesson(secIndex, lesIndex, 'type', e.target.value)}
-                                className="w-full bg-neutral-50/50 border border-neutral-200 px-2 py-1.5 rounded-xl text-xs font-bold cursor-pointer focus:outline-none"
+                                className="w-full bg-neutral-50/50 border border-neutral-200 px-2 py-1.5 rounded-xl text-xs font-bold cursor-pointer"
                               >
                                 <option value="video">🎥 Video</option>
                                 <option value="reading">📄 Reading</option>
@@ -1123,12 +1040,12 @@ export const COURSES: Course[] = ${formattedCourses};
                             </div>
 
                             <div className="sm:col-span-2">
-                              <label className="text-[9px] font-black uppercase text-neutral-400 block mb-0.5">ডিউরেশন (Duration):</label>
+                              <label className="text-[9px] font-black uppercase text-neutral-400 block mb-0.5">ডিউরেশন:</label>
                               <input
                                 type="text"
                                 value={lesson.duration}
                                 onChange={(e) => handleUpdateLesson(secIndex, lesIndex, 'duration', e.target.value)}
-                                className="w-full bg-neutral-50/50 border border-neutral-200 px-3 py-1.5 rounded-xl text-xs font-semibold focus:outline-none"
+                                className="w-full bg-neutral-50/50 border border-neutral-200 px-3 py-1.5 rounded-xl text-xs font-semibold"
                                 placeholder="08:45"
                               />
                             </div>
@@ -1146,8 +1063,8 @@ export const COURSES: Course[] = ${formattedCourses};
                                   type="text"
                                   value={lesson.videoUrl || ''}
                                   onChange={(e) => handleUpdateLesson(secIndex, lesIndex, 'videoUrl', e.target.value)}
-                                  className="flex-1 bg-neutral-50/50 border border-neutral-200 px-3 py-1.5 rounded-xl text-xs font-semibold focus:outline-none focus:border-orange-500 font-mono"
-                                  placeholder="যেমন: https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                                  className="flex-1 bg-neutral-50/50 border border-neutral-200 px-3 py-1.5 rounded-xl text-xs font-semibold focus:outline-none font-mono"
+                                  placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
                                 />
                                 {lesson.videoUrl && (
                                   <button
@@ -1156,33 +1073,29 @@ export const COURSES: Course[] = ${formattedCourses};
                                     className="px-3.5 py-1.5 text-[10px] font-extrabold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100/50 rounded-xl border border-orange-100/30 transition-all flex items-center gap-1 shrink-0"
                                   >
                                     <Eye className="w-3.5 h-3.5" />
-                                    {previewingLessonId === lesson.id ? 'বন্ধ করুন' : 'Plyr.js প্লেয়ার প্রিভিউ'}
+                                    {previewingLessonId === lesson.id ? 'বন্ধ করুন' : 'প্লেয়ার প্রিভিউ'}
                                   </button>
                                 )}
                               </div>
                               
                               {previewingLessonId === lesson.id && lesson.videoUrl && (
                                 <div className="mt-2.5 max-w-xl rounded-2xl overflow-hidden border border-neutral-100 shadow-sm bg-neutral-950">
-                                  <div className="bg-neutral-900 px-3 py-1.5 border-b border-neutral-800 flex justify-between items-center">
-                                    <span className="text-[9px] font-extrabold tracking-wider text-orange-500 uppercase">Plyr.js Live Preview</span>
-                                    <span className="text-[8px] font-bold text-neutral-400 font-mono">{lesson.duration}</span>
-                                  </div>
                                   <YouTubePlayer videoUrl={lesson.videoUrl} />
                                 </div>
                               )}
                             </div>
                           )}
 
-                          {/* Content if reading/video content */}
-                          {lesson.type !== 'quiz' && (
+                          {/* Content if reading content */}
+                          {lesson.type === 'reading' && (
                             <div>
-                              <label className="text-[9px] font-black uppercase text-neutral-400 block mb-0.5">লেসন কন্টেন্ট (Text Content):</label>
+                              <label className="text-[9px] font-black uppercase text-neutral-400 block mb-0.5">পড়ার টেক্সট (Reading Content - Markdown Supported):</label>
                               <textarea
                                 value={lesson.content || ''}
                                 onChange={(e) => handleUpdateLesson(secIndex, lesIndex, 'content', e.target.value)}
-                                rows={2}
+                                rows={4}
                                 className="w-full bg-neutral-50/50 border border-neutral-200 px-3 py-1.5 rounded-xl text-xs font-medium focus:outline-none"
-                                placeholder="এই লেসনের বিস্তারিত তথ্য এখানে লিখুন..."
+                                placeholder="এই লেসনের টেক্সট এখানে লিখুন..."
                               />
                             </div>
                           )}
@@ -1202,8 +1115,8 @@ export const COURSES: Course[] = ${formattedCourses};
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-6 bg-white rounded-2xl border border-dashed border-neutral-200">
-                      <p className="text-[10px] text-neutral-400 font-bold">এই সেকশনে কোন লেসন নেই। ডানের "লেসন যোগ করুন" বাটনে ক্লিক করুন।</p>
+                    <div className="text-center py-4 bg-white rounded-2xl border border-dashed border-neutral-200 text-neutral-400 text-xs font-semibold">
+                      কোন লেসন নেই
                     </div>
                   )}
 
@@ -1214,9 +1127,7 @@ export const COURSES: Course[] = ${formattedCourses};
 
           {/* Form Actions Footer */}
           <div className="bg-neutral-50 rounded-3xl p-5 flex items-center justify-between border border-neutral-100">
-            <span className="text-[11px] font-semibold text-neutral-500 leading-normal">
-              * কোর্সটি সেভ করার সাথে সাথে এটি ফায়ারবেস ডেটাবেসে সিঙ্ক হয়ে আপডেট হয়ে যাবে।
-            </span>
+            <span></span>
             
             <div className="flex items-center gap-3 shrink-0">
               <button
