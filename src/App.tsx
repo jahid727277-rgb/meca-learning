@@ -491,9 +491,6 @@ export default function App() {
               <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 animate-fadeIn">
                 <div className="mb-8">
                   <h2 className="text-2xl font-black text-neutral-900 tracking-tight">My Active Courses</h2>
-                  <p className="text-sm text-neutral-500 font-medium mt-1">
-                    Resume lectures, take custom exams, and monitor your certificate credentials.
-                  </p>
                 </div>
 
                 {enrolledCoursesList.length > 0 ? (

@@ -205,24 +205,7 @@ export default function Classroom({
           <section className="lg:col-span-8 space-y-4">
             
             <div className="bg-white rounded-3xl border border-neutral-100 shadow-xs overflow-hidden">
-              {/* VIDEO TYPE LESSON (TEXT CONTENT DESCRIPTION) */}
-              {currentLesson.type === 'video' && (
-                <div className="p-6 sm:p-8 space-y-4">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-1 rounded-md bg-orange-50 text-orange-600 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
-                      <Video className="w-3 h-3" />
-                      Video Lecture
-                    </span>
-                    <span className="text-neutral-400 text-xs font-semibold">{currentLesson.duration}</span>
-                  </div>
-                  <h2 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
-                    {currentLesson.title}
-                  </h2>
-                  <div className="prose prose-sm prose-orange text-neutral-600 font-medium leading-relaxed max-w-none pt-4 border-t border-neutral-50">
-                    <p>{currentLesson.content}</p>
-                  </div>
-                </div>
-              )}
+              {/* VIDEO TYPE LESSON (TEXT CONTENT DESCRIPTION - REMOVED AS REQUESTED) */}
 
               {/* READING TYPE LESSON */}
               {currentLesson.type === 'reading' && (
@@ -360,7 +343,7 @@ export default function Classroom({
                   <ArrowLeft className="w-5 h-5" />
                 </button>
 
-                {/* Right Side: Class Notes + Complete & Next Button */}
+                 {/* Right Side: Class Notes Button Only */}
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setShowClassNotes(true)}
@@ -368,14 +351,6 @@ export default function Classroom({
                   >
                     <FileText className="w-4 h-4 text-orange-500" />
                     <span>Class Note</span>
-                  </button>
-
-                  <button
-                    onClick={handleMarkComplete}
-                    className="flex items-center gap-1.5 px-5 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs hover:shadow-md cursor-pointer"
-                  >
-                    <span>{isCurrentLessonCompleted ? 'Next Lesson' : 'Complete & Next'}</span>
-                    <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
