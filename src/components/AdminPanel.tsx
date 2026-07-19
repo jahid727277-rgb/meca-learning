@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Course, Lesson, SyllabusSection, Level } from '../types';
+import ImageWithSkeleton from './ImageWithSkeleton';
 
 const mecaLearningLogo = 'https://res.cloudinary.com/djjhol6dg/image/upload/v1784080493/meca_learning_logo_a3yqec.png';
 import YouTubePlayer from './YouTubePlayer';
@@ -509,11 +510,14 @@ export const COURSES: Course[] = ${formattedCourses};
             <div className="p-5 rounded-2xl bg-neutral-50/50 border border-neutral-100 space-y-3">
               <span className="text-[9px] font-black uppercase tracking-wider text-neutral-400 block">বর্তমান লোগো প্রিভিউ:</span>
               <div className="p-4 rounded-xl bg-neutral-900 inline-flex items-center justify-center">
-                <img 
-                  src={brandingLogo && brandingLogo !== 'meca_learning_logo.png' && brandingLogo !== '/meca_learning_logo.png' ? brandingLogo : mecaLearningLogo} 
-                  alt="Logo Preview" 
-                  className="h-10 w-auto object-contain max-w-full"
-                />
+                <div className="h-10 w-32 relative">
+                  <ImageWithSkeleton 
+                    src={brandingLogo && brandingLogo !== 'meca_learning_logo.png' && brandingLogo !== '/meca_learning_logo.png' ? brandingLogo : mecaLearningLogo} 
+                    alt="Logo Preview" 
+                    className="h-full w-auto object-contain max-w-full mx-auto"
+                    containerClassName="h-full w-full"
+                  />
+                </div>
               </div>
               <p className="text-[10px] text-neutral-400 font-semibold leading-relaxed">
                 * যদি ইমেজটি ইনভ্যালিড হয়, তবে সিস্টেম ডিফল্ট লোগোটি প্রদর্শন করবে।
@@ -804,10 +808,11 @@ export const COURSES: Course[] = ${formattedCourses};
                 <div>
                   {/* Course Thumbnail */}
                   <div className="relative aspect-video w-full bg-neutral-100 overflow-hidden">
-                    <img 
+                    <ImageWithSkeleton 
                       src={course.thumbnail} 
                       alt={course.title}
                       className="w-full h-full object-cover"
+                      containerClassName="w-full h-full"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800';
                       }}

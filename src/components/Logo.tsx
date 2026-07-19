@@ -1,4 +1,5 @@
 import React from 'react';
+import ImageWithSkeleton from './ImageWithSkeleton';
 
 const mecaLearningLogo = './logo_web.png';
 
@@ -18,7 +19,7 @@ export default function Logo({ className = '', imgClassName = '', size = 42, var
                         logoUrl !== mecaLearningLogo &&
                         logoUrl !== 'meca_learning_logo.png' && 
                         logoUrl !== '/meca_learning_logo.png' &&
-                        logoUrl !== './meca_learning_logo.png' &&
+                        logoUrl !== './meca_learning_logo.png' && 
                         !logoUrl.includes('meca_learning_logo');
 
   const currentLogo = hasCustomLogo ? logoUrl : mecaLearningLogo;
@@ -28,19 +29,22 @@ export default function Logo({ className = '', imgClassName = '', size = 42, var
 
   return (
     <div className={`inline-flex items-center justify-center ${className}`}>
-      <img
-        src={currentLogo}
-        alt="Meca Learning"
-        style={{ height: size, width: 'auto', ...filterStyle }}
-        className={`object-contain select-none max-w-full ${imgClassName}`}
-        referrerPolicy="no-referrer"
-        onError={(e) => {
-          const target = e.target as HTMLImageElement;
-          if (target.src !== mecaLearningLogo) {
-            target.src = mecaLearningLogo;
-          }
-        }}
-      />
+      <div style={{ height: size, width: 'auto' }} className="relative flex items-center justify-center">
+        <ImageWithSkeleton
+          src={currentLogo}
+          alt="Meca Learning"
+          style={{ height: size, width: 'auto', ...filterStyle }}
+          className={`object-contain select-none max-w-full ${imgClassName}`}
+          containerClassName="w-full h-full flex items-center justify-center"
+          referrerPolicy="no-referrer"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            if (target.src !== mecaLearningLogo) {
+              target.src = mecaLearningLogo;
+            }
+          }}
+        />
+      </div>
     </div>
   );
 }

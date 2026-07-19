@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Play, Loader2 } from 'lucide-react';
+import ImageWithSkeleton from './ImageWithSkeleton';
 
 interface YouTubePlayerProps {
   videoUrl: string;
@@ -32,13 +33,14 @@ export default function YouTubePlayer({ videoUrl }: YouTubePlayerProps) {
           onClick={() => setPlayState('loading')}
           className="absolute inset-0 w-full h-full flex items-center justify-center bg-neutral-900 z-30 cursor-pointer"
         >
-          <img
+          <ImageWithSkeleton
             src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
             onError={(e) => {
               (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
             }}
             alt="Video Thumbnail"
             className="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:opacity-60 group-hover:scale-105 transition-all duration-500"
+            containerClassName="absolute inset-0 w-full h-full"
           />
           <div className="relative z-10 w-16 h-16 sm:w-20 sm:h-20 bg-orange-600 text-white rounded-full flex items-center justify-center shadow-xl transform group-hover:scale-110 transition-all duration-300">
             <Play className="w-8 h-8 sm:w-10 sm:h-10 fill-white ml-1 sm:ml-2" />
@@ -49,13 +51,14 @@ export default function YouTubePlayer({ videoUrl }: YouTubePlayerProps) {
       {/* 2. LOADING STATE: SHOWS THUMBNAIL WITH SPINNING LOADER */}
       {playState === 'loading' && (
         <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-neutral-900 z-30 cursor-wait">
-          <img
+          <ImageWithSkeleton
             src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
             onError={(e) => {
               (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
             }}
             alt="Video Thumbnail"
             className="absolute inset-0 w-full h-full object-cover opacity-30"
+            containerClassName="absolute inset-0 w-full h-full"
           />
           <div className="relative z-10 flex flex-col items-center gap-3">
             <div className="w-16 h-16 sm:w-20 sm:h-20 bg-orange-600/90 text-white rounded-full flex items-center justify-center shadow-lg">

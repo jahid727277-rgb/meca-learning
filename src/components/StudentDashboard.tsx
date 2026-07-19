@@ -5,6 +5,7 @@ import { updateProfile, updatePassword } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import Certificates from './Certificates';
 import CourseCard from './CourseCard';
+import ImageWithSkeleton from './ImageWithSkeleton';
 
 interface StudentDashboardProps {
   progress: UserProgress;
@@ -160,11 +161,12 @@ export default function StudentDashboard({
         <div className="flex flex-col items-center mb-5">
           <div className="w-14 h-14 rounded-full border border-neutral-300 bg-neutral-50 overflow-hidden flex items-center justify-center shadow-xs">
             {user?.photoURL ? (
-              <img 
+              <ImageWithSkeleton 
                 src={user.photoURL} 
                 alt={user.displayName || "User"} 
                 className="w-full h-full object-cover"
                 referrerPolicy="no-referrer"
+                containerClassName="w-full h-full"
               />
             ) : (
               <div className="text-neutral-700 font-extrabold text-lg">

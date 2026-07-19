@@ -2,6 +2,7 @@ import React from 'react';
 import { Course, Enrollment } from '../types';
 import { Clock, BookOpen, Star, Sparkles, Award } from 'lucide-react';
 import { formatBDTPrice } from '../utils/currency';
+import ImageWithSkeleton from './ImageWithSkeleton';
 
 interface CourseCardProps {
   key?: string | number;
@@ -22,11 +23,12 @@ export default function CourseCard({ course, enrollment, onSelect, onEnroll, onS
     >
       {/* Course Thumbnail */}
       <div className="relative aspect-video w-full overflow-hidden bg-neutral-100">
-        <img 
+        <ImageWithSkeleton 
           src={course.thumbnail || 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&q=80&w=800'} 
           alt={course.title || 'Course'}
           referrerPolicy="no-referrer"
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          containerClassName="w-full h-full"
         />
       </div>
 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Review } from '../types';
 import { Star, MessageSquare, Plus, Check } from 'lucide-react';
+import ImageWithSkeleton from './ImageWithSkeleton';
 
 interface ReviewSectionProps {
   reviews: Review[];
@@ -218,11 +219,14 @@ export default function ReviewSection({ reviews, onAddReview }: ReviewSectionPro
             <div className="flex items-center justify-between">
               {/* Profile and meta info */}
               <div className="flex items-center gap-3">
-                <img 
-                  src={rev.userAvatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100'} 
-                  alt={rev.userName} 
-                  className="w-9 h-9 rounded-full bg-neutral-100 object-cover"
-                />
+                <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 border border-neutral-100 bg-neutral-100">
+                  <ImageWithSkeleton 
+                    src={rev.userAvatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100'} 
+                    alt={rev.userName} 
+                    className="w-full h-full object-cover"
+                    containerClassName="w-full h-full"
+                  />
+                </div>
                 <div>
                   <h5 className="text-xs font-bold text-neutral-900">{rev.userName}</h5>
                   <span className="text-[9px] text-neutral-400 font-bold">{rev.date}</span>

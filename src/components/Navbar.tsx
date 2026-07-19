@@ -1,6 +1,7 @@
 import React from 'react';
 import Logo from './Logo';
 import { BookOpen, Trophy, Compass, User, Flame } from 'lucide-react';
+import ImageWithSkeleton from './ImageWithSkeleton';
 
 interface NavbarProps {
   currentView: string;
@@ -84,12 +85,15 @@ export default function Navbar({
                 className="flex items-center justify-center hover:scale-105 transition-transform"
               >
                 {user.photoURL ? (
-                  <img 
-                    src={user.photoURL} 
-                    alt={user.displayName || "User"} 
-                    className="w-9 h-9 rounded-full border-2 border-neutral-900 object-cover shadow-sm"
-                    referrerPolicy="no-referrer"
-                  />
+                  <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-neutral-900 shadow-sm shrink-0">
+                    <ImageWithSkeleton 
+                      src={user.photoURL} 
+                      alt={user.displayName || "User"} 
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                      containerClassName="w-full h-full"
+                    />
+                  </div>
                 ) : (
                   <div className="flex items-center justify-center w-9 h-9 rounded-full bg-orange-100 text-orange-700 border-2 border-neutral-900 font-bold text-sm shadow-sm">
                     {(user.displayName || "U").charAt(0).toUpperCase()}

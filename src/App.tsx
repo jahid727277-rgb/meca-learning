@@ -7,6 +7,7 @@ import CourseCard from './components/CourseCard';
 import StudentDashboard from './components/StudentDashboard';
 import Classroom from './components/Classroom';
 import ReviewSection from './components/ReviewSection';
+import ImageWithSkeleton from './components/ImageWithSkeleton';
 import { COURSES, REVIEWS } from './data/courses';
 import { normalizeCourse, getEnrolledCourses } from './utils/courseHelper';
 import { UserProgress, Enrollment, Course, Review } from './types';
@@ -802,11 +803,14 @@ export default function App() {
                       </h4>
 
                       <div className="flex items-center gap-3">
-                        <img 
-                          src={selectedCourse.instructor.avatar} 
-                          alt={selectedCourse.instructor.name}
-                          className="w-12 h-12 rounded-full object-cover bg-neutral-100 border border-neutral-200"
-                        />
+                        <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border border-neutral-200 bg-neutral-100">
+                          <ImageWithSkeleton 
+                            src={selectedCourse.instructor.avatar} 
+                            alt={selectedCourse.instructor.name}
+                            className="w-full h-full object-cover"
+                            containerClassName="w-full h-full"
+                          />
+                        </div>
                         <div>
                           <h5 className="text-xs font-bold text-neutral-900 leading-none">
                             {selectedCourse.instructor.name}
