@@ -8,7 +8,7 @@ import {
   signInWithEmailAndPassword,
   updateProfile
 } from "firebase/auth";
-import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, getDoc } from "firebase/firestore";
 import { getDatabase, ref, set as rtdbSet, get as rtdbGet } from "firebase/database";
 
 const firebaseConfig = {
@@ -25,7 +25,21 @@ const firebaseConfig = {
 // Initialize Firebase
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+
+// Initialize Firestore with robust persistent local cache to handle connection/offline errors gracefully
+let firestoreDb;
+try {
+  firestoreDb = initializeFirestore(app, {
+    localCache: persistentLocalCache({
+      tabManager: persistentMultipleTabManager()
+    })
+  });
+} catch (e) {
+  console.warn("Could not initialize persistent local cache for Firestore. Falling back to default Firestore initialization.");
+  firestoreDb = getFirestore(app);
+}
+export const db = firestoreDb;
+
 export const rtdb = getDatabase(app);
 
 // Authentication Helpers

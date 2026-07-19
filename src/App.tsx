@@ -60,6 +60,7 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState<boolean>(true);
   const [authError, setAuthError] = useState<string | null>(null);
   const [copiedDomain, setCopiedDomain] = useState<string | null>(null);
+  const [isCloudProgressLoaded, setIsCloudProgressLoaded] = useState<boolean>(false);
 
   // Dynamic courses and branding configurations loaded from Firebase Realtime Database
   const [courses, setCourses] = useState<Course[]>(COURSES);
@@ -127,14 +128,38 @@ export default function App() {
         } catch (e) {}
 
         try {
+          setIsCloudProgressLoaded(false);
           const cloudProgress = await getUserProgress(currentUser.uid);
           if (cloudProgress) {
-            setProgress(cloudProgress);
+            // Merge local progress with cloud progress so newly enrolled courses are not lost!
+            setProgress((prev) => {
+              const mergedEnrolled = {
+                ...(cloudProgress.enrolledCourses || {}),
+                ...(prev.enrolledCourses || {}),
+              };
+              
+              const mergedCertificates = Array.from(new Set([
+                ...(cloudProgress.certificates || []),
+                ...(prev.certificates || [])
+              ]));
+
+              return {
+                ...cloudProgress,
+                enrolledCourses: mergedEnrolled,
+                certificates: mergedCertificates,
+                streak: Math.max(cloudProgress.streak || 0, prev.streak || 0),
+                totalHours: Math.max(cloudProgress.totalHours || 0, prev.totalHours || 0),
+                lastStudyDate: cloudProgress.lastStudyDate || prev.lastStudyDate || "",
+                activityLog: cloudProgress.activityLog || prev.activityLog || [],
+              };
+            });
           } else {
             // First time logging in, backup local progress to Firebase
             await saveUserProgress(currentUser.uid, progress);
           }
+          setIsCloudProgressLoaded(true);
         } catch (error: any) {
+          setIsCloudProgressLoaded(true); // Fallback to allow saving even on failure/offline
           if (error && error.message && error.message.includes("offline")) {
             console.warn("Firebase client is offline. Unable to fetch online progress.");
           } else {
@@ -147,6 +172,7 @@ export default function App() {
           localStorage.removeItem('current_user_pwd');
         } catch (e) {}
         setProgress(DEFAULT_PROGRESS);
+        setIsCloudProgressLoaded(false);
       }
     });
     return () => unsubscribe();
@@ -235,10 +261,13 @@ export default function App() {
   // Save progress locally and to Firebase on changes
   useEffect(() => {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(progress));
-    if (user) {
+    
+    // Only save to Firebase if the user is authenticated and we've successfully loaded/merged their cloud progress.
+    // This prevents empty local progress from overwriting saved cloud progress during initial page loads.
+    if (user && isCloudProgressLoaded) {
       saveUserProgress(user.uid, progress);
     }
-  }, [progress, user]);
+  }, [progress, user, isCloudProgressLoaded]);
 
   useEffect(() => {
     localStorage.setItem(REVIEWS_STORAGE_KEY, JSON.stringify(reviewsMap));
@@ -298,6 +327,16 @@ export default function App() {
     handleEnroll(courseId, user);
     setSelectedCourseId(courseId);
     setCurrentView('classroom');
+  };
+
+  const handleSignOut = async () => {
+    try {
+      localStorage.removeItem('meca_cached_user');
+      localStorage.removeItem('current_user_pwd');
+    } catch (e) {}
+    await logoutUser();
+    setCurrentView('explore');
+    setSelectedCourseId(null);
   };
 
   const handleUpdateEnrollment = (
@@ -426,7 +465,7 @@ export default function App() {
         totalHours={progress.totalHours}
         user={user}
         onSignIn={() => setShowAuthModal(true)}
-        onSignOut={logoutUser}
+        onSignOut={handleSignOut}
         logoUrl={logoUrl}
         isAdmin={isAdmin}
       />
@@ -555,7 +594,7 @@ export default function App() {
                   progress={progress}
                   courses={courses}
                   user={user}
-                  onSignOut={logoutUser}
+                  onSignOut={handleSignOut}
                   isAdmin={isAdmin}
                   onNavigate={(view) => {
                     window.scrollTo({ top: 0, behavior: 'smooth' });
