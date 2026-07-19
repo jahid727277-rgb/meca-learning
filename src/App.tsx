@@ -6,7 +6,6 @@ import CourseCatalog from './components/CourseCatalog';
 import CourseCard from './components/CourseCard';
 import StudentDashboard from './components/StudentDashboard';
 import Classroom from './components/Classroom';
-import ReviewSection from './components/ReviewSection';
 import ImageWithSkeleton from './components/ImageWithSkeleton';
 import { COURSES, REVIEWS } from './data/courses';
 import { normalizeCourse, getEnrolledCourses } from './utils/courseHelper';
@@ -444,7 +443,7 @@ export default function App() {
             onAddHours={handleAddHours}
             onBack={() => {
               setCurrentView('my-learning');
-              setSelectedCourseId(selectedCourse.id); // Go back to course detail subview
+              setSelectedCourseId(null);
             }}
             onUnlockCertificate={handleUnlockCertificate}
           />
@@ -476,7 +475,14 @@ export default function App() {
                 <section id="catalog-section" className="bg-white pb-24 sm:pb-32 md:pb-40">
                   <CourseCatalog
                     courses={courses}
-                    onSelectCourse={(courseId) => setSelectedCourseId(courseId)}
+                    onSelectCourse={(courseId) => {
+                      if (progress.enrolledCourses[courseId]) {
+                        setSelectedCourseId(courseId);
+                        setCurrentView('classroom');
+                      } else {
+                        handleEnrollAndStart(courseId);
+                      }
+                    }}
                     onEnroll={handleEnrollAndStart}
                     enrolledCourses={progress.enrolledCourses}
                     searchQuery={searchQuery}
@@ -543,7 +549,7 @@ export default function App() {
                   }}
                   onNavigateToCourse={(courseId) => {
                     setSelectedCourseId(courseId);
-                    setCurrentView('my-learning');
+                    setCurrentView('classroom');
                   }}
                   onNavigateToExplore={() => setCurrentView('explore')}
                 />
@@ -587,245 +593,6 @@ export default function App() {
                   }}
                   userEmail={user?.email || 'Demo Mode / Guest User'}
                 />
-              </div>
-            )}
-
-            {/* VIEW D: COURSE DETAILED SPECIFICATION PAGE (Active when selectedCourseId is set) */}
-            {selectedCourseId && selectedCourse && (
-              <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 animate-fadeIn">
-                {/* Back Link */}
-                <button
-                  onClick={() => setSelectedCourseId(null)}
-                  className="inline-flex items-center gap-1 text-xs font-bold text-neutral-500 hover:text-orange-600 mb-6 transition-colors"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  Back to Syllabus Catalog
-                </button>
-
-                {/* Split detail grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                  
-                  {/* LEFT DETAILS COLUMN (Syllabus, Overview, Reviews) (Col 8) */}
-                  <div className="lg:col-span-8 space-y-8">
-                    
-                    {/* Header Spec Banner */}
-                    <div className="space-y-4">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="px-2.5 py-1 rounded-md bg-orange-50 text-orange-600 text-[10px] font-extrabold uppercase border border-orange-100">
-                          {selectedCourse.category}
-                        </span>
-                        <span className="px-2.5 py-1 rounded-md bg-neutral-900 text-white text-[10px] font-extrabold uppercase">
-                          {selectedCourse.level}
-                        </span>
-                        <div className="flex items-center gap-1 text-xs text-neutral-500 font-semibold pl-2">
-                          <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                          <span className="text-neutral-950 font-bold">{selectedCourse.rating}</span>
-                          <span>({selectedCourse.reviewCount} students reviews)</span>
-                        </div>
-                      </div>
-
-                      <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-neutral-900 tracking-tight leading-none">
-                        {selectedCourse.title}
-                      </h1>
-
-                      <p className="text-sm sm:text-base text-neutral-600 font-medium leading-relaxed">
-                        {selectedCourse.description}
-                      </p>
-                    </div>
-
-                    {/* Core syllabus breakdown directory */}
-                    <div className="space-y-4">
-                      <div className="border-b border-neutral-100 pb-3">
-                        <h3 className="text-base font-extrabold text-neutral-900 uppercase tracking-wider">
-                          Curriculum Syllabus
-                        </h3>
-                        <p className="text-xs text-neutral-500 font-medium">
-                          Expand program sections to browse through integrated projects, quizzes, and modules.
-                        </p>
-                      </div>
-
-                      <div className="space-y-3">
-                        {selectedCourse.syllabus.map((sec) => {
-                          const isSectionExpanded = expandedSection === sec.id;
-                          return (
-                            <div 
-                              key={sec.id}
-                              className="bg-white rounded-2xl border border-neutral-100 shadow-2xs overflow-hidden"
-                            >
-                              {/* Section Accordion Trigger */}
-                              <button
-                                onClick={() => setExpandedSection(isSectionExpanded ? null : sec.id)}
-                                className="w-full text-left px-5 py-4 flex items-center justify-between bg-neutral-50/50 hover:bg-neutral-50 transition-colors"
-                              >
-                                <span className="text-xs font-extrabold text-neutral-800 uppercase tracking-wider">
-                                  {sec.title}
-                                </span>
-                                <span className="text-[10px] font-bold text-orange-600 uppercase">
-                                  {isSectionExpanded ? 'Collapse' : 'Expand'}
-                                </span>
-                              </button>
-
-                              {/* Section lesson rows */}
-                              {isSectionExpanded && (
-                                <div className="divide-y divide-neutral-50 px-5 bg-white">
-                                  {sec.lessons.map((les) => (
-                                    <div 
-                                      key={les.id} 
-                                      className="py-3.5 flex items-center justify-between text-xs font-semibold text-neutral-700"
-                                    >
-                                      <div className="flex items-center gap-2.5 overflow-hidden pr-4">
-                                        <div className="w-5 h-5 rounded-md bg-neutral-100 flex items-center justify-center shrink-0">
-                                          {les.type === 'video' && <Clock className="w-3.5 h-3.5 text-neutral-400" />}
-                                          {les.type === 'reading' && <BookOpen className="w-3.5 h-3.5 text-neutral-400" />}
-                                          {les.type === 'quiz' && <ShieldCheck className="w-3.5 h-3.5 text-neutral-400" />}
-                                        </div>
-                                        <span className="truncate">{les.title}</span>
-                                      </div>
-
-                                      <span className="text-neutral-400 text-[10px] font-bold uppercase shrink-0">
-                                        {les.duration}
-                                      </span>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Dedicated reviews board */}
-                    <div className="space-y-4">
-                      <div className="border-b border-neutral-100 pb-3">
-                        <h3 className="text-base font-extrabold text-neutral-900 uppercase tracking-wider">
-                          Student Peer Reviews
-                        </h3>
-                        <p className="text-xs text-neutral-500 font-medium">
-                          Read genuine feedback and thoughts submitted by verified course graduates.
-                        </p>
-                      </div>
-
-                      <ReviewSection
-                        reviews={reviewsMap[selectedCourse.id] || REVIEWS}
-                        onAddReview={(reviewData) => handleAddReview(selectedCourse.id, reviewData)}
-                      />
-                    </div>
-
-                  </div>
-
-                  {/* RIGHT ACTION CARD (Tuition, Buy, Instructor profile) (Col 4) */}
-                  <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-24">
-                    
-                    {/* TUITION PURCHASE / LAUNCH MODULE */}
-                    <div className="bg-white p-6 rounded-3xl border border-orange-100 shadow-sm space-y-5">
-                      <div className="space-y-1">
-                        <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block">
-                          Full Certification Tuition
-                        </span>
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-3xl font-black text-neutral-900">{formatBDTPrice(selectedCourse.price)}</span>
-                          <span className="text-xs font-semibold text-neutral-400 line-through">{formatBDTPrice(149.99)}</span>
-                        </div>
-                      </div>
-
-                      {/* Course Core details checklist */}
-                      <div className="space-y-3 text-xs font-semibold text-neutral-600 border-t border-b border-neutral-50 py-4">
-                        <div className="flex items-center justify-between">
-                          <span className="flex items-center gap-2">
-                            <Clock className="w-4.5 h-4.5 text-neutral-400" />
-                            <span>Total Duration</span>
-                          </span>
-                          <span className="text-neutral-900 font-bold">{selectedCourse.duration}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="flex items-center gap-2">
-                            <BookOpen className="w-4.5 h-4.5 text-neutral-400" />
-                            <span>Modules & Lessons</span>
-                          </span>
-                          <span className="text-neutral-900 font-bold">{selectedCourse.lessonsCount} syllabus units</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="flex items-center gap-2">
-                            <Award className="w-4.5 h-4.5 text-amber-500" />
-                            <span>Certification status</span>
-                          </span>
-                          <span className="text-emerald-600 font-bold flex items-center gap-1">
-                            <ShieldCheck className="w-4 h-4 fill-emerald-100" /> Verified
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Dynamic Primary Enrollment Button */}
-                      {activeEnrollment ? (
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between text-xs font-extrabold text-neutral-700">
-                            <span>Syllabus Progress</span>
-                            <span className="text-orange-600">{activeEnrollment.progress.toFixed(0)}%</span>
-                          </div>
-                          <div className="w-full h-1.5 bg-neutral-100 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-orange-500" 
-                              style={{ width: `${activeEnrollment.progress}%` }}
-                            />
-                          </div>
-
-                          <button
-                            onClick={() => {
-                              setCurrentView('classroom');
-                            }}
-                            className="w-full py-3.5 rounded-2xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold transition-colors shadow-xs"
-                          >
-                            Resume Classroom Studies
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => handleEnrollAndStart(selectedCourse.id)}
-                          className="w-full py-3.5 rounded-2xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold transition-all shadow-xs hover:shadow-md uppercase tracking-wider"
-                        >
-                          Enroll in Curriculum program
-                        </button>
-                      )}
-
-                      <p className="text-[10px] text-neutral-400 text-center font-bold uppercase tracking-wider">
-                        🔒 Secure Checkout • 14-Day Money-back promise
-                      </p>
-                    </div>
-
-                    {/* INSTRUCTOR CARD */}
-                    <div className="bg-neutral-50/50 p-6 rounded-3xl border border-neutral-100 space-y-4">
-                      <h4 className="text-xs font-extrabold text-neutral-900 uppercase tracking-wider">
-                        Program Director
-                      </h4>
-
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border border-neutral-200 bg-neutral-100">
-                          <ImageWithSkeleton 
-                            src={selectedCourse.instructor.avatar} 
-                            alt={selectedCourse.instructor.name}
-                            className="w-full h-full object-cover"
-                            containerClassName="w-full h-full"
-                          />
-                        </div>
-                        <div>
-                          <h5 className="text-xs font-bold text-neutral-900 leading-none">
-                            {selectedCourse.instructor.name}
-                          </h5>
-                          <span className="text-[10px] text-neutral-400 font-bold mt-1 block leading-none">
-                            {selectedCourse.instructor.role}
-                          </span>
-                        </div>
-                      </div>
-
-                      <p className="text-[11px] text-neutral-500 font-medium leading-relaxed italic">
-                        "{selectedCourse.instructor.bio}"
-                      </p>
-                    </div>
-
-                  </div>
-
-                </div>
               </div>
             )}
           </>

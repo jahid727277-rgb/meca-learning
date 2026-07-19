@@ -46,10 +46,7 @@ export default function ImageWithSkeleton({
       {isLoading && (
         <div 
           className={`absolute inset-0 bg-neutral-200 animate-pulse flex items-center justify-center ${skeletonClassName}`}
-        >
-          {/* Subtle logo or visual indicator in the middle of skeleton (optional) */}
-          <div className="w-8 h-8 rounded-full border-2 border-neutral-300/40 border-t-neutral-400 animate-spin" />
-        </div>
+        />
       )}
 
       {/* Actual image */}
