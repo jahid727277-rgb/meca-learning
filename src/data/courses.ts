@@ -1,7 +1,4 @@
 import { Course, Review } from '../types';
-import thumbPromptEng from '../assets/images/thumb_prompt_eng_new_1784310584623.jpg';
-import thumbAiAgents from '../assets/images/thumb_ai_agents_new_1784310597568.jpg';
-import thumbAiAuto from '../assets/images/thumb_ai_auto_new_1784310610112.jpg';
 
 export const CATEGORIES = [
   'All',
@@ -22,7 +19,7 @@ export const COURSES: Course[] = [
     duration: '10h 15m',
     lessonsCount: 5,
     price: 49.99,
-    thumbnail: thumbPromptEng,
+    thumbnail: 'https://res.cloudinary.com/djjhol6dg/image/upload/v1784463289/1784463216153_jtoqbe.png',
     tags: ['Prompt Engineering', 'Generative AI', 'LLMs', 'Gemini'],
     instructor: {
       name: 'Abrar Chowdhury',
@@ -125,7 +122,7 @@ To extract the highest quality responses from LLMs, engineers rely on structured
     duration: '14h 30m',
     lessonsCount: 6,
     price: 79.99,
-    thumbnail: thumbAiAgents,
+    thumbnail: 'https://res.cloudinary.com/djjhol6dg/image/upload/v1783557260/1000263343-clean_fuquye.png',
     tags: ['AI Agents', 'LangGraph', 'Autogen', 'Function Calling'],
     instructor: {
       name: 'Samia Rahman',
@@ -195,7 +192,7 @@ An AI agent is only as powerful as the tools it can access. Modern APIs (like Ge
     duration: '18h 45m',
     lessonsCount: 6,
     price: 99.99,
-    thumbnail: thumbAiAuto,
+    thumbnail: 'https://res.cloudinary.com/djjhol6dg/image/upload/v1783557260/1000263336-clean_nzjfqt.png',
     tags: ['Automation', 'APIs', 'Node.js', 'Workflows', 'n8n'],
     instructor: {
       name: 'Dr. Sarah Jenkins',

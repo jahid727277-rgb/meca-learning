@@ -3,8 +3,73 @@ import { Course, Lesson, SyllabusSection, Enrollment } from '../types';
 import YouTubePlayer from './YouTubePlayer';
 import { 
   Play, Pause, ArrowLeft, CheckCircle, Circle, Video, 
-  BookOpen, HelpCircle, ChevronRight, Sparkles, Trophy, Award, RotateCcw
+  BookOpen, HelpCircle, ChevronRight, Sparkles, Trophy, Award, RotateCcw,
+  FileText, X, ExternalLink
 } from 'lucide-react';
+
+const LESSON_NOTES: { [lessonId: string]: { title: string; content: string; pdfUrl?: string } } = {
+  'les-1': {
+    title: 'Generative AI Foundations Class Notes',
+    content: `### 1. The Generative Paradigm Shift
+Traditional programming is explicit and rule-based. Generative AI is probabilistic, built on predicting patterns from massive internet-scale data.
+
+### 2. Foundational LLM Terms
+* **LLMs (Large Language Models)**: Deep neural networks (Transformers) trained to predict the next word or token.
+* **Tokens**: The basic units of text processed by LLMs (~4 characters per token).
+* **Context Window**: The memory size of the model. Gemini Pro has a massive context window of 1 million to 2 million tokens, enabling complex reasoning over whole codebases.
+
+### 3. Recommended Reading
+Read "Attention Is All You Need" (Vaswani et al.) to understand the Transformer architecture that makes all of this possible.`,
+    pdfUrl: 'https://arxiv.org/pdf/1706.03762.pdf'
+  },
+  'les-2': {
+    title: 'LLM Hyper-parameters Class Notes',
+    content: `### 1. Temperature Control
+* **Low Temperature (0.0 - 0.2)**: Highly deterministic, precise, and logical. Ideal for coding, mathematical, or structural tasks.
+* **High Temperature (0.7 - 1.0)**: Highly creative, random, and diverse. Ideal for brainstorming, fiction, or creative writing.
+
+### 2. Top-K and Top-P Sampling
+* **Top-K**: Restricts the selection to the 'K' most likely tokens.
+* **Top-P (Nucleus Sampling)**: Dynamically selects the minimum set of tokens whose cumulative probability exceeds the value 'P'.
+
+### 3. Recommended Tools
+Use Google AI Studio to experiment with these sliders in real-time.`,
+    pdfUrl: 'https://ai.google.dev/gemini-api/docs/quickstart'
+  },
+  'les-5': {
+    title: 'Structured Output Formats Class Notes',
+    content: `### 1. Why Structured Outputs?
+For web apps and APIs, raw text output is unpredictable. We need formatted JSON or XML to parse details safely into JavaScript objects.
+
+### 2. Best Practices
+* Always provide a strict JSON Schema description to the Gemini API.
+* Use XML delimiters in prompts like \`<result>...</result>\` for easier regex extraction.
+* Handle invalid JSON exceptions gracefully in your catch blocks.`,
+    pdfUrl: 'https://ai.google.dev/gemini-api/docs/structured-outputs'
+  },
+  'les-202-1': {
+    title: 'ReAct Loop Mechanics Class Notes',
+    content: `### 1. The ReAct Pattern (Reasoning + Acting)
+Instead of returning a final answer directly, the agent follows a cycle:
+1. **Thought**: Reason about the user's request.
+2. **Action**: Choose which tool to use and generate its exact parameters.
+3. **Observation**: Read the result returned by the executed tool.
+
+### 2. Avoiding Infinite Loops
+Set a maximum loop count (e.g. max 5 tool calls) to prevent the agent from running indefinitely and exhausting your API budget.`,
+    pdfUrl: 'https://arxiv.org/pdf/2210.03629.pdf'
+  },
+  'les-ai-1': {
+    title: 'Document Pipelines Class Notes',
+    content: `### 1. Document Parsing & Semantic Chunking
+* Parse PDFs or webhooks into clean text.
+* Split text into semantic chunks of ~500 tokens with 10% overlap to preserve context boundaries.
+
+### 2. Workflow Orchestration
+Use event queues or reliable trigger models to process documents asynchronously without freezing the user interface.`,
+    pdfUrl: 'https://ai.google.dev/gemini-api/docs/document-processing'
+  }
+};
 
 interface ClassroomProps {
   course: Course;
@@ -28,6 +93,7 @@ export default function Classroom({
   const initialLesson = allLessons.find((l) => l.id === enrollment.currentLessonId) || allLessons[0];
   
   const [currentLesson, setCurrentLesson] = useState<Lesson>(initialLesson);
+  const [showClassNotes, setShowClassNotes] = useState<boolean>(false);
 
   // Quiz state
   const [selectedAnswers, setSelectedAnswers] = useState<{ [qId: string]: number }>({});
@@ -112,16 +178,18 @@ export default function Classroom({
   const completedLessonsCount = enrollment.completedLessons.length;
   const progressPercent = (completedLessonsCount / totalLessons) * 100;
 
+  const note = LESSON_NOTES[currentLesson.id];
+
   return (
     <div className="bg-neutral-50/30 min-h-screen">
-            {/* Global Video Player Area (Full Width under Navbar) */}
+      {/* Cinematic Global Video Player Area (Full Width under Navbar) */}
       {currentLesson.type === 'video' && (
-        <div className="w-full bg-black shadow-xl z-20 relative">
+        <div className="w-full bg-black z-20 relative">
           <div className="mx-auto max-w-4xl w-full">
             {currentLesson.videoUrl ? (
               <YouTubePlayer videoUrl={currentLesson.videoUrl} />
             ) : (
-              <div className="text-center text-neutral-400 p-8 space-y-2 aspect-video flex flex-col justify-center items-center w-full h-full">
+              <div className="text-center text-neutral-400 p-8 space-y-2 aspect-video flex flex-col justify-center items-center w-full h-full bg-neutral-900">
                 <Video className="w-12 h-12 text-neutral-600 mx-auto animate-pulse" />
                 <p className="text-sm font-semibold">Video Unavailable</p>
               </div>
@@ -130,67 +198,15 @@ export default function Classroom({
         </div>
       )}
 
-      {/* Classroom header status bar */}
-      <div className="bg-white border-b border-orange-100 py-3 px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={onBack}
-              className="p-2 rounded-full hover:bg-neutral-100 text-neutral-600 hover:text-orange-600 transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <div>
-              <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block">
-                Classroom Portal • {course.category}
-              </span>
-              <h1 className="text-base sm:text-lg font-black text-neutral-900 tracking-tight leading-none">
-                {course.title}
-              </h1>
-            </div>
-          </div>
-
-          {/* Progress gauge */}
-          <div className="flex items-center gap-3 bg-orange-50/20 p-2.5 rounded-2xl border border-orange-100/40">
-            <div className="text-right">
-              <span className="text-[10px] text-neutral-400 font-bold uppercase block">Course Progress</span>
-              <span className="text-xs font-black text-orange-600">
-                {completedLessonsCount} / {totalLessons} Lessons ({progressPercent.toFixed(0)}%)
-              </span>
-            </div>
-            <div className="relative w-10 h-10 flex items-center justify-center">
-              {/* Simple visual SVG radial loader */}
-              <svg className="w-full h-full transform -rotate-95">
-                <circle cx="20" cy="20" r="16" className="stroke-neutral-100 fill-none" strokeWidth="3" />
-                <circle 
-                  cx="20" 
-                  cy="20" 
-                  r="16" 
-                  className="stroke-orange-500 fill-none transition-all duration-700" 
-                  strokeWidth="3" 
-                  strokeDasharray={`${2 * Math.PI * 16}`}
-                  strokeDashoffset={`${2 * Math.PI * 16 * (1 - progressPercent / 100)}`}
-                />
-              </svg>
-              <span className="absolute text-[9px] font-extrabold text-neutral-700">
-                {progressPercent.toFixed(0)}%
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main learning split board */}
-      
       <div className="mx-auto max-w-7xl px-4 py-4 sm:py-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
           {/* LEFT COLUMN - Lesson Player Content (Col 8) */}
-          <section className="lg:col-span-8 space-y-6">
+          <section className="lg:col-span-8 space-y-4">
             
-            {/* 1. VIDEO TYPE LESSON (TEXT CONTENT) */}
-            {currentLesson.type === 'video' && (
-              <div className="bg-white rounded-3xl border border-neutral-100 shadow-xs overflow-hidden">
+            <div className="bg-white rounded-3xl border border-neutral-100 shadow-xs overflow-hidden">
+              {/* VIDEO TYPE LESSON (TEXT CONTENT DESCRIPTION) */}
+              {currentLesson.type === 'video' && (
                 <div className="p-6 sm:p-8 space-y-4">
                   <div className="flex items-center gap-2">
                     <span className="px-2.5 py-1 rounded-md bg-orange-50 text-orange-600 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
@@ -199,157 +215,170 @@ export default function Classroom({
                     </span>
                     <span className="text-neutral-400 text-xs font-semibold">{currentLesson.duration}</span>
                   </div>
-                  <h2 className="text-xl font-bold text-neutral-900 tracking-tight">
+                  <h2 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
                     {currentLesson.title}
                   </h2>
-                  <div className="prose prose-sm prose-orange text-neutral-600 font-medium leading-relaxed max-w-none pt-2 border-t border-neutral-50">
+                  <div className="prose prose-sm prose-orange text-neutral-600 font-medium leading-relaxed max-w-none pt-4 border-t border-neutral-50">
                     <p>{currentLesson.content}</p>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* 2. READING TYPE LESSON */}
-            {currentLesson.type === 'reading' && (
-              <div className="bg-white rounded-3xl border border-neutral-100 shadow-xs p-6 sm:p-8 space-y-6">
-                <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-1 rounded-md bg-orange-50 text-orange-600 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
-                    <BookOpen className="w-3 h-3" />
-                    Reading Assignment
-                  </span>
-                  <span className="text-neutral-400 text-xs font-semibold">{currentLesson.duration}</span>
-                </div>
-                
-                <h2 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
-                  {currentLesson.title}
-                </h2>
-                
-                <div className="w-16 h-1 bg-orange-500 rounded-full" />
-
-                {/* Simulated formatted reading content */}
-                <div className="text-neutral-600 font-medium space-y-4 leading-relaxed pt-2 border-t border-neutral-50">
-                  {currentLesson.content ? (
-                    <div className="whitespace-pre-wrap select-text text-sm">
-                      {currentLesson.content}
-                    </div>
-                  ) : (
-                    <p className="italic text-neutral-400">This reading material is currently blank.</p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* 3. QUIZ TYPE LESSON */}
-            {currentLesson.type === 'quiz' && (
-              <div className="bg-white rounded-3xl border border-neutral-100 shadow-xs p-6 sm:p-8 space-y-6">
-                <div className="flex items-center justify-between border-b border-neutral-100 pb-4">
+              {/* READING TYPE LESSON */}
+              {currentLesson.type === 'reading' && (
+                <div className="p-6 sm:p-8 space-y-6">
                   <div className="flex items-center gap-2">
                     <span className="px-2.5 py-1 rounded-md bg-orange-50 text-orange-600 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
-                      <HelpCircle className="w-3 h-3" />
-                      Interactive Quiz
+                      <BookOpen className="w-3 h-3" />
+                      Reading Assignment
                     </span>
-                    <span className="text-neutral-400 text-xs font-semibold">Instant Grading</span>
+                    <span className="text-neutral-400 text-xs font-semibold">{currentLesson.duration}</span>
+                  </div>
+                  
+                  <h2 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
+                    {currentLesson.title}
+                  </h2>
+                  
+                  <div className="w-16 h-1 bg-orange-500 rounded-full" />
+
+                  <div className="text-neutral-600 font-medium space-y-4 leading-relaxed pt-2 border-t border-neutral-50">
+                    {currentLesson.content ? (
+                      <div className="whitespace-pre-wrap select-text text-sm">
+                        {currentLesson.content}
+                      </div>
+                    ) : (
+                      <p className="italic text-neutral-400">This reading material is currently blank.</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* QUIZ TYPE LESSON */}
+              {currentLesson.type === 'quiz' && (
+                <div className="p-6 sm:p-8 space-y-6">
+                  <div className="flex items-center justify-between border-b border-neutral-100 pb-4">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-1 rounded-md bg-orange-50 text-orange-600 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                        <HelpCircle className="w-3 h-3" />
+                        Interactive Quiz
+                      </span>
+                      <span className="text-neutral-400 text-xs font-semibold">Instant Grading</span>
+                    </div>
+
+                    {quizSubmitted && (
+                      <div className="flex items-center gap-1.5 bg-neutral-900 text-white px-3 py-1 rounded-xl text-xs font-bold shadow-xs">
+                        <Trophy className="w-4 h-4 text-amber-400" />
+                        <span>Score: {quizScore}%</span>
+                      </div>
+                    )}
                   </div>
 
-                  {quizSubmitted && (
-                    <div className="flex items-center gap-1.5 bg-neutral-900 text-white px-3 py-1 rounded-xl text-xs font-bold shadow-xs">
-                      <Trophy className="w-4 h-4 text-amber-400" />
-                      <span>Score: {quizScore}%</span>
-                    </div>
-                  )}
-                </div>
+                  <div className="space-y-8">
+                    {currentLesson.quiz?.map((q, qIdx) => {
+                      const isCorrect = selectedAnswers[q.id] === q.correctAnswer;
+                      return (
+                        <div key={q.id} className="space-y-4">
+                          <h3 className="text-sm font-bold text-neutral-900 leading-snug">
+                            {qIdx + 1}. {q.question}
+                          </h3>
 
-                <div className="space-y-8">
-                  {currentLesson.quiz?.map((q, qIdx) => {
-                    const isCorrect = selectedAnswers[q.id] === q.correctAnswer;
-                    return (
-                      <div key={q.id} className="space-y-4">
-                        <h3 className="text-sm font-bold text-neutral-900 leading-snug">
-                          {qIdx + 1}. {q.question}
-                        </h3>
+                          <div className="grid grid-cols-1 gap-2.5">
+                            {q.options.map((opt, optIdx) => {
+                              const isSelected = selectedAnswers[q.id] === optIdx;
+                              const isAnswerCorrect = q.correctAnswer === optIdx;
+                              
+                              let optBg = 'bg-neutral-50 hover:bg-neutral-100 border-neutral-200';
+                              let optText = 'text-neutral-700';
 
-                        <div className="grid grid-cols-1 gap-2.5">
-                          {q.options.map((opt, optIdx) => {
-                            const isSelected = selectedAnswers[q.id] === optIdx;
-                            const isAnswerCorrect = q.correctAnswer === optIdx;
-                            
-                            let optBg = 'bg-neutral-50 hover:bg-neutral-100 border-neutral-200';
-                            let optText = 'text-neutral-700';
-
-                            if (isSelected) {
-                              optBg = 'bg-orange-50 border-orange-500';
-                              optText = 'text-orange-950';
-                            }
-
-                            if (quizSubmitted) {
-                              if (isAnswerCorrect) {
-                                optBg = 'bg-emerald-50 border-emerald-500 text-emerald-950 font-semibold';
-                              } else if (isSelected && !isCorrect) {
-                                optBg = 'bg-red-100 border-red-400 text-red-950';
-                              } else {
-                                optBg = 'bg-neutral-50/50 opacity-60 border-neutral-200';
+                              if (isSelected) {
+                                optBg = 'bg-orange-50 border-orange-500';
+                                optText = 'text-orange-950';
                               }
-                            }
 
-                            return (
-                              <button
-                                key={optIdx}
-                                type="button"
-                                disabled={quizSubmitted}
-                                onClick={() => handleAnswerSelect(q.id, optIdx)}
-                                className={`w-full text-left px-4 py-3 rounded-xl text-xs border transition-all flex items-center justify-between ${optBg} ${optText}`}
-                              >
-                                <span>{opt}</span>
-                                {quizSubmitted && isAnswerCorrect && (
-                                  <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
-                                )}
-                              </button>
-                            );
-                          })}
+                              if (quizSubmitted) {
+                                if (isAnswerCorrect) {
+                                  optBg = 'bg-emerald-50 border-emerald-500 text-emerald-950 font-semibold';
+                                } else if (isSelected && !isCorrect) {
+                                  optBg = 'bg-red-100 border-red-400 text-red-950';
+                                } else {
+                                  optBg = 'bg-neutral-50/50 opacity-60 border-neutral-200';
+                                }
+                              }
+
+                              return (
+                                <button
+                                  key={optIdx}
+                                  type="button"
+                                  disabled={quizSubmitted}
+                                  onClick={() => handleAnswerSelect(q.id, optIdx)}
+                                  className={`w-full text-left px-4 py-3 rounded-xl text-xs border transition-all flex items-center justify-between ${optBg} ${optText}`}
+                                >
+                                  <span>{opt}</span>
+                                  {quizSubmitted && isAnswerCorrect && (
+                                    <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
 
-                {/* Quiz Control Bar */}
-                <div className="flex items-center justify-end gap-3 pt-6 border-t border-neutral-100">
-                  {quizSubmitted ? (
-                    <button
-                      onClick={handleResetQuiz}
-                      className="flex items-center gap-1 px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-xl text-xs font-bold transition-colors"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                      Retry Quiz
-                    </button>
-                  ) : (
-                    <button
-                      onClick={handleSubmitQuiz}
-                      disabled={Object.keys(selectedAnswers).length < (currentLesson.quiz?.length || 0)}
-                      className="px-5 py-2.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-40 text-white rounded-xl text-xs font-bold transition-colors"
-                    >
-                      Submit Answers
-                    </button>
-                  )}
+                  {/* Quiz Control Bar */}
+                  <div className="flex items-center justify-end gap-3 pt-6 border-t border-neutral-100">
+                    {quizSubmitted ? (
+                      <button
+                        onClick={handleResetQuiz}
+                        className="flex items-center gap-1 px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-xl text-xs font-bold transition-colors"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        Retry Quiz
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleSubmitQuiz}
+                        disabled={Object.keys(selectedAnswers).length < (currentLesson.quiz?.length || 0)}
+                        className="px-5 py-2.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-40 text-white rounded-xl text-xs font-bold transition-colors"
+                      >
+                        Submit Answers
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* INTEGRATED CONTROL TOOLBAR */}
+              <div className="flex items-center justify-between bg-white px-5 py-4 border-t border-neutral-100">
+                {/* Left Side: Back Arrow Button */}
+                <button
+                  onClick={onBack}
+                  className="p-2.5 rounded-full hover:bg-neutral-100 text-neutral-600 hover:text-orange-600 transition-colors cursor-pointer border border-neutral-100"
+                  title="Back"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+
+                {/* Right Side: Class Notes + Complete & Next Button */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setShowClassNotes(true)}
+                    className="flex items-center gap-1.5 px-4 py-2.5 bg-white border border-neutral-200 hover:bg-neutral-50 text-neutral-700 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                  >
+                    <FileText className="w-4 h-4 text-orange-500" />
+                    <span>Class Note</span>
+                  </button>
+
+                  <button
+                    onClick={handleMarkComplete}
+                    className="flex items-center gap-1.5 px-5 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs hover:shadow-md cursor-pointer"
+                  >
+                    <span>{isCurrentLessonCompleted ? 'Next Lesson' : 'Complete & Next'}</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
-            )}
-
-            {/* COMPLETE LESSON ACTION BUTTON BAR */}
-            <div className="flex items-center justify-between bg-white p-5 rounded-2xl border border-neutral-100 shadow-2xs">
-              <span className="text-xs text-neutral-500 font-semibold">
-                {isCurrentLessonCompleted 
-                  ? '✅ You have finished this class lesson segment.' 
-                  : '⭐️ Complete the module to log study hours.'}
-              </span>
-
-              <button
-                onClick={handleMarkComplete}
-                className="flex items-center gap-1.5 px-6 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs hover:shadow-md"
-              >
-                <span>{isCurrentLessonCompleted ? 'Next Lesson' : 'Complete & Next'}</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
             </div>
 
           </section>
@@ -370,8 +399,8 @@ export default function Classroom({
                   
                   <div className="space-y-1">
                     {sec.lessons.map((les) => {
-                      const isSelected = currentLesson.id === les.id;
-                      const isDone = enrollment.completedLessons.includes(les.id);
+                       const isSelected = currentLesson.id === les.id;
+                       const isDone = enrollment.completedLessons.includes(les.id);
                       
                       let iconColor = 'text-neutral-400';
                       let labelColor = 'text-neutral-600 hover:text-neutral-900';
@@ -417,6 +446,65 @@ export default function Classroom({
 
         </div>
       </div>
+
+      {/* Class Note Modal Overlay */}
+      {showClassNotes && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-xl border border-neutral-100 max-w-lg w-full overflow-hidden flex flex-col max-h-[85vh]">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/50">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-orange-500" />
+                <h3 className="font-extrabold text-sm sm:text-base text-neutral-900 leading-tight">
+                  {note?.title || 'Class Notes'}
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowClassNotes(false)}
+                className="p-1.5 rounded-full hover:bg-neutral-200 text-neutral-500 hover:text-neutral-700 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 overflow-y-auto font-sans text-neutral-700 leading-relaxed space-y-4">
+              {note ? (
+                <div className="prose prose-sm prose-orange">
+                  <div className="whitespace-pre-line text-xs sm:text-sm">
+                    {note.content}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm italic text-neutral-400 text-center py-6">
+                  This class does not have specific structured notes attached yet. Check back soon!
+                </p>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-neutral-100 flex items-center justify-end gap-2 bg-neutral-50/30">
+              {note?.pdfUrl && (
+                <a
+                  href={note.pdfUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  Open Reference PDF
+                </a>
+              )}
+              <button
+                onClick={() => setShowClassNotes(false)}
+                className="px-4 py-2 border border-neutral-200 hover:bg-neutral-50 text-neutral-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
