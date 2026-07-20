@@ -6,6 +6,7 @@ import { auth } from '../lib/firebase';
 import Certificates from './Certificates';
 import CourseCard from './CourseCard';
 import ImageWithSkeleton from './ImageWithSkeleton';
+import { useNavigate } from 'react-router-dom';
 
 interface StudentDashboardProps {
   progress: UserProgress;
@@ -13,9 +14,6 @@ interface StudentDashboardProps {
   user: any;
   onSignOut: () => void;
   isAdmin: boolean;
-  onNavigate: (view: string) => void;
-  onNavigateToCourse: (courseId: string) => void;
-  onNavigateToExplore: () => void;
   onEnroll: (courseId: string) => void;
 }
 
@@ -25,11 +23,9 @@ export default function StudentDashboard({
   user,
   onSignOut,
   isAdmin,
-  onNavigate,
-  onNavigateToCourse,
-  onNavigateToExplore,
   onEnroll,
 }: StudentDashboardProps) {
+  const navigate = useNavigate();
   const [selectedCertCourseId, setSelectedCertCourseId] = useState<string | null>(null);
   
   // Profile editing state
@@ -46,7 +42,7 @@ export default function StudentDashboard({
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Derive courses enrolled
-  const enrolledList = Object.values(progress.enrolledCourses).map((enrollment) => {
+  const enrolledList = Object.values(progress.enrolledCourses || {}).map((enrollment) => {
     const course = courses.find((c) => c.id === enrollment.courseId);
     return {
       enrollment,
@@ -112,7 +108,10 @@ export default function StudentDashboard({
           <div className="flex items-center gap-2">
             {user && isAdmin && (
               <button
-                onClick={() => onNavigate('admin')}
+                onClick={() => {
+                  navigate('/admin');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
                 className="px-3 py-1 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-[10px] font-bold rounded-lg border border-neutral-300 transition-colors cursor-pointer"
               >
                 Admin
@@ -288,7 +287,10 @@ export default function StudentDashboard({
                 key={course.id}
                 course={course}
                 enrollment={enrollment}
-                onSelect={(courseId) => onNavigateToCourse(courseId)}
+                onSelect={(courseId) => {
+                  navigate(`/classroom/${courseId}`);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
                 onEnroll={() => {}}
                 onShowCertificate={(courseId) => setSelectedCertCourseId(courseId)}
               />
@@ -306,7 +308,14 @@ export default function StudentDashboard({
                   <CourseCard
                     key={course.id}
                     course={course}
-                    onSelect={(courseId) => onNavigateToCourse(courseId)}
+                    onSelect={(courseId) => {
+                      if (progress.enrolledCourses?.[courseId]) {
+                        navigate(`/classroom/${courseId}`);
+                      } else {
+                        navigate(`/course/${courseId}`);
+                      }
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
                     onEnroll={onEnroll}
                   />
                 ))}

@@ -2,10 +2,10 @@ import React from 'react';
 import Logo from './Logo';
 import { BookOpen, Trophy, Compass, User, Flame } from 'lucide-react';
 import ImageWithSkeleton from './ImageWithSkeleton';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { motion } from 'motion/react';
 
 interface NavbarProps {
-  currentView: string;
-  onNavigate: (view: string) => void;
   streak: number;
   totalHours: number;
   user: any;
@@ -16,8 +16,6 @@ interface NavbarProps {
 }
 
 export default function Navbar({ 
-  currentView, 
-  onNavigate, 
   streak, 
   totalHours,
   user,
@@ -26,11 +24,19 @@ export default function Navbar({
   logoUrl,
   isAdmin = false
 }: NavbarProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const navItems = [
-    { id: 'explore', label: 'Explore Courses', icon: Compass },
+    { id: '', label: 'Explore Courses', icon: Compass },
     { id: 'my-learning', label: 'My Learning', icon: BookOpen },
     { id: 'dashboard', label: 'Dashboard', icon: Trophy },
   ];
+
+  const handleNavClick = (path: string) => {
+    navigate(path);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <header id="app-header" className="sticky top-0 z-40 w-full border-b border-orange-100/20 bg-white/30 backdrop-blur-2xl">
@@ -38,7 +44,7 @@ export default function Navbar({
         
         {/* Logo and Brand */}
         <div 
-          onClick={() => onNavigate('explore')} 
+          onClick={() => handleNavClick('/')} 
           className="cursor-pointer hover:opacity-90 transition-opacity"
         >
           <Logo size={40} variant="orange" logoUrl={logoUrl} />
@@ -48,11 +54,12 @@ export default function Navbar({
         <nav className="hidden md:flex items-center space-x-1">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = currentView === item.id || (item.id === 'my-learning' && currentView === 'classroom');
+            const path = `/${item.id}`;
+            const isActive = location.pathname === path || (item.id === 'my-learning' && location.pathname.startsWith('/classroom/'));
             return (
               <button
                 key={item.id}
-                onClick={() => onNavigate(item.id)}
+                onClick={() => handleNavClick(path)}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
                   isActive
                     ? 'bg-white/50 backdrop-blur-xl border border-orange-200/30 text-orange-700'
@@ -80,7 +87,7 @@ export default function Navbar({
           {user ? (
             <div className="flex items-center">
               <button 
-                onClick={() => onNavigate('dashboard')}
+                onClick={() => navigate('/dashboard')}
                 title="Go to Dashboard"
                 className="flex items-center justify-center hover:scale-105 transition-transform"
               >
@@ -117,11 +124,12 @@ export default function Navbar({
         <div className="flex justify-around py-2">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = currentView === item.id || (item.id === 'my-learning' && currentView === 'classroom');
+            const path = `/${item.id}`;
+            const isActive = location.pathname === path || (item.id === 'my-learning' && location.pathname.startsWith('/classroom/'));
             return (
               <button
                 key={item.id}
-                onClick={() => onNavigate(item.id)}
+                onClick={() => handleNavClick(path)}
                 className={`flex flex-col items-center gap-0.5 py-1 px-3 text-xs font-medium transition-all rounded-lg ${
                   isActive 
                     ? 'text-orange-700 bg-white/50 backdrop-blur-xl' 

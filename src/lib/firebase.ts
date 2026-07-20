@@ -67,30 +67,49 @@ export async function logoutUser() {
 
 // Data Synchronization Helpers
 export async function saveUserProgress(userId: string, progressData: any) {
-  // First save locally to localStorage so progress is never lost even if client is offline
   try {
-    localStorage.setItem(`meca_progress_${userId}`, JSON.stringify(progressData));
-  } catch (e) {}
+    if (!userId) return;
 
-  try {
+    // Deep clean data for Firestore (remove undefined values which cause setDoc to fail)
+    const cleanData = JSON.parse(JSON.stringify(progressData));
+
     // Save to Firestore for structured records
     const userDocRef = doc(db, "users", userId);
+    
+    // Save a clean array of enrolled courses with ID and Title for easy querying in console
+    const enrolledCourseDetails = cleanData.enrolledCourses 
+      ? Object.values(cleanData.enrolledCourses).map((enrollment: any) => ({
+          id: enrollment.courseId,
+          title: enrollment.courseTitle || enrollment.courseId
+        }))
+      : [];
+    
     await setDoc(userDocRef, {
-      progress: progressData,
+      progress: cleanData,
+      enrolledCoursesList: enrolledCourseDetails,
       updatedAt: new Date().toISOString()
     }, { merge: true });
 
-    // Also sync to Realtime Database since the user provided a databaseURL (could be used for IoT/smart control systems, etc.)
+    // Also sync to Realtime Database
     const rtdbRef = ref(rtdb, `users/${userId}/progress`);
     await rtdbSet(rtdbRef, {
-      ...progressData,
+      ...cleanData,
       updatedAt: new Date().toISOString()
+    });
+
+    if (cleanData.enrolledCourses) {
+      const cleanCoursesRef = ref(rtdb, `users/${userId}/enrolled_courses`);
+      await rtdbSet(cleanCoursesRef, cleanData.enrolledCourses);
+    }
+    
+    console.log(`Successfully synced progress to Firebase for user: ${userId}`, {
+      enrolledCount: Object.keys(cleanData.enrolledCourses || {}).length
     });
   } catch (error: any) {
     if (error && error.message && error.message.includes("offline")) {
-      console.warn("Firebase client is offline. Progress saved to local cache and will be synced later.");
+      console.warn("Firebase client is offline. Progress will sync when online.");
     } else {
-      console.warn("Error saving user progress to Firebase (saved to cache):", error?.message || error);
+      console.error("Error saving user progress to Firebase:", error?.message || error);
     }
   }
 }
@@ -101,9 +120,6 @@ export async function getUserProgress(userId: string) {
     const userDocRef = doc(db, "users", userId);
     const docSnap = await getDoc(userDocRef);
     if (docSnap.exists() && docSnap.data().progress) {
-      try {
-        localStorage.setItem(`meca_progress_${userId}`, JSON.stringify(docSnap.data().progress));
-      } catch (e) {}
       return docSnap.data().progress;
     }
 
@@ -111,26 +127,15 @@ export async function getUserProgress(userId: string) {
     const rtdbRef = ref(rtdb, `users/${userId}/progress`);
     const rtdbSnap = await rtdbGet(rtdbRef);
     if (rtdbSnap.exists()) {
-      try {
-        localStorage.setItem(`meca_progress_${userId}`, JSON.stringify(rtdbSnap.val()));
-      } catch (e) {}
       return rtdbSnap.val();
     }
   } catch (error: any) {
     if (error && error.message && error.message.includes("offline")) {
-      console.warn("Firebase client is offline. Using local cache fallback.");
+      console.warn("Firebase client is offline.");
     } else {
-      console.warn("Error getting user progress from Firebase (using local fallback):", error?.message || error);
+      console.warn("Error getting user progress from Firebase:", error?.message || error);
     }
   }
-
-  // Fallback to local cache
-  try {
-    const cached = localStorage.getItem(`meca_progress_${userId}`);
-    if (cached) {
-      return JSON.parse(cached);
-    }
-  } catch (e) {}
 
   return null;
 }

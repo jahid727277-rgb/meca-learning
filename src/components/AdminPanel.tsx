@@ -68,7 +68,7 @@ export default function AdminPanel({
   const [brandingLogo, setBrandingLogo] = useState(logoUrl);
 
   // GitHub States
-  const [githubToken, setGithubToken] = useState(() => localStorage.getItem('meca_github_token') || '');
+  const [githubToken, setGithubToken] = useState('');
   const [githubRepo, setGithubRepo] = useState(() => localStorage.getItem('meca_github_repo') || '');
   const [githubBranch, setGithubBranch] = useState(() => localStorage.getItem('meca_github_branch') || 'main');
   const [githubFilePath, setGithubFilePath] = useState(() => localStorage.getItem('meca_github_filepath') || 'src/data/courses.ts');
@@ -117,7 +117,6 @@ export const COURSES: Course[] = ${formattedCourses};
       return;
     }
 
-    localStorage.setItem('meca_github_token', githubToken);
     localStorage.setItem('meca_github_repo', githubRepo);
     localStorage.setItem('meca_github_branch', githubBranch);
     localStorage.setItem('meca_github_filepath', githubFilePath);
@@ -533,7 +532,6 @@ export const COURSES: Course[] = ${formattedCourses};
                       onChange={(e) => {
                         const val = e.target.value;
                         setGithubToken(val);
-                        localStorage.setItem('meca_github_token', val);
                       }}
                       className="w-full pl-4 pr-11 py-2.5 bg-neutral-50 hover:bg-neutral-100/50 focus:bg-white border border-neutral-200 text-neutral-800 text-xs font-mono rounded-xl focus:outline-none"
                       placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"

@@ -1,0 +1,21 @@
+{
+  "collections": {
+    "users": {
+      "schema": {
+        "progress": {
+          "streak": "number",
+          "totalHours": "number",
+          "enrolledCourses": "map",
+          "certificates": "array",
+          "activityLog": "array"
+        },
+        "enrolledCoursesList": "array",
+        "updatedAt": "string"
+      },
+      "rules": {
+        "read": "auth != null && auth.uid == userId",
+        "write": "auth != null && auth.uid == userId"
+      }
+    }
+  }
+}

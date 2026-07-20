@@ -50,6 +50,7 @@ export interface Course {
 
 export interface Enrollment {
   courseId: string;
+  courseTitle?: string;
   progress: number; // 0 to 100
   completedLessons: string[]; // List of lesson IDs
   completedAt?: string; // Date string when course was completed

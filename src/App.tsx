@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Routes, Route, useNavigate, useParams, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Logo from './components/Logo';
@@ -6,6 +7,9 @@ import CourseCatalog from './components/CourseCatalog';
 import CourseCard from './components/CourseCard';
 import StudentDashboard from './components/StudentDashboard';
 import Classroom from './components/Classroom';
+import CourseDetailsView from './components/CourseDetailsView';
+import CourseDetailsRouteWrapper from './components/CourseDetailsRouteWrapper';
+import ClassroomRouteWrapper from './components/ClassroomRouteWrapper';
 import ImageWithSkeleton from './components/ImageWithSkeleton';
 import { COURSES, REVIEWS } from './data/courses';
 import { normalizeCourse, getEnrolledCourses } from './utils/courseHelper';
@@ -27,6 +31,7 @@ import {
   saveImageConfigs
 } from './lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { AnimatePresence, motion } from 'framer-motion';
 import AuthModal from './components/AuthModal';
 import Footer, { footerContent } from './components/Footer';
 import AdminPanel from './components/AdminPanel';
@@ -45,7 +50,21 @@ const DEFAULT_PROGRESS: UserProgress = {
   activityLog: [],
 };
 
+const PageTransition = ({ children }: { children: React.ReactNode }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 4 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -4 }}
+    transition={{ duration: 0.15, ease: 'easeOut' }}
+  >
+    {children}
+  </motion.div>
+);
+
 export default function App() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [user, setUser] = useState<FirebaseUser | null>(() => {
     try {
       const cached = localStorage.getItem('meca_cached_user');
@@ -70,20 +89,18 @@ export default function App() {
   const [pendingEnrollCourseId, setPendingEnrollCourseId] = useState<string | null>(null);
 
   // Navigation: 'explore' | 'my-learning' | 'dashboard' | 'classroom' | 'admin'
-  const [currentView, setCurrentView] = useState<string>('explore');
-  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   const [selectedCertCourseId, setSelectedCertCourseId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Course detailed section state - expanded syllabus indices
   const [expandedSection, setExpandedSection] = useState<string | null>('sec-1');
 
-  // Load / Save student progress
+  // Load student progress from localStorage if available
   const [progress, setProgress] = useState<UserProgress>(() => {
     const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (saved) {
       try {
-        return JSON.parse(saved);
+        return { ...DEFAULT_PROGRESS, ...JSON.parse(saved) };
       } catch (e) {
         console.error('Error parsing user progress, loading default', e);
       }
@@ -91,16 +108,8 @@ export default function App() {
     return DEFAULT_PROGRESS;
   });
 
-  // Load / Save custom reviews list
+  // Custom reviews list
   const [reviewsMap, setReviewsMap] = useState<{ [courseId: string]: Review[] }>(() => {
-    const saved = localStorage.getItem(REVIEWS_STORAGE_KEY);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('Error parsing reviews, loading default', e);
-      }
-    }
     // Set initial default reviews
     const initial: { [courseId: string]: Review[] } = {};
     COURSES.forEach((c) => {
@@ -109,6 +118,11 @@ export default function App() {
     });
     return initial;
   });
+
+  // Scroll to top on route change with smooth behavior
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [location.pathname]);
 
   // Listen to Auth changes and load progress from Firebase
   useEffect(() => {
@@ -134,8 +148,8 @@ export default function App() {
             // Merge local progress with cloud progress so newly enrolled courses are not lost!
             setProgress((prev) => {
               const mergedEnrolled = {
-                ...(cloudProgress.enrolledCourses || {}),
                 ...(prev.enrolledCourses || {}),
+                ...(cloudProgress.enrolledCourses || {}),
               };
               
               const mergedCertificates = Array.from(new Set([
@@ -168,8 +182,9 @@ export default function App() {
         }
       } else {
         try {
-          localStorage.removeItem('meca_cached_user');
-          localStorage.removeItem('current_user_pwd');
+          // Clear all browser storage to ensure no data leaks between users
+          localStorage.clear();
+          sessionStorage.clear();
         } catch (e) {}
         setProgress(DEFAULT_PROGRESS);
         setIsCloudProgressLoaded(false);
@@ -258,9 +273,26 @@ export default function App() {
     fetchFirebaseConfigurations();
   }, []);
 
+  // Process pending enrollments after login
+  useEffect(() => {
+    if (user && isCloudProgressLoaded && pendingEnrollCourseId) {
+      // Small timeout to ensure state settles before enrolling
+      setTimeout(() => {
+        handleEnroll(pendingEnrollCourseId, user);
+        setPendingEnrollCourseId(null);
+        setShowAuthModal(false);
+        navigate('/my-learning');
+      }, 100);
+    }
+  }, [user, isCloudProgressLoaded, pendingEnrollCourseId]);
+
   // Save progress locally and to Firebase on changes
   useEffect(() => {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(progress));
+    // Only save to local storage if user is logged in
+    // This satisfies the requirement that data is tied to the logged-in session
+    if (user) {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(progress));
+    }
     
     // Only save to Firebase if the user is authenticated and we've successfully loaded/merged their cloud progress.
     // This prevents empty local progress from overwriting saved cloud progress during initial page loads.
@@ -269,9 +301,7 @@ export default function App() {
     }
   }, [progress, user, isCloudProgressLoaded]);
 
-  useEffect(() => {
-    localStorage.setItem(REVIEWS_STORAGE_KEY, JSON.stringify(reviewsMap));
-  }, [reviewsMap]);
+  // No longer saving reviewsMap to localStorage
 
   const handleSignIn = async () => {
     try {
@@ -288,34 +318,50 @@ export default function App() {
   };
 
   // Actions
+  // Actions
   const handleEnroll = (courseId: string, currentUser = user) => {
+    console.log("DEBUG: handleEnroll called for:", courseId);
     if (!currentUser) {
       setPendingEnrollCourseId(courseId);
       setShowAuthModal(true);
       return;
     }
-    if (progress.enrolledCourses[courseId]) return;
+    
+    console.log("DEBUG: Current enrolledCourses:", progress.enrolledCourses);
+    if (progress.enrolledCourses[courseId]) {
+        console.log("DEBUG: Already enrolled, returning.");
+        return;
+    }
 
     const course = courses.find((c) => c.id === courseId);
-    if (!course) return;
+    if (!course) {
+        console.log("DEBUG: Course not found:", courseId);
+        return;
+    }
 
     // First lesson of syllabus
     const firstLessonId = course.syllabus[0]?.lessons[0]?.id || '';
 
     const newEnrollment: Enrollment = {
       courseId,
+      courseTitle: course.title,
       progress: 0,
       completedLessons: [],
       currentLessonId: firstLessonId,
     };
 
-    setProgress((prev) => ({
-      ...prev,
-      enrolledCourses: {
-        ...prev.enrolledCourses,
-        [courseId]: newEnrollment,
-      },
-    }));
+    console.log("DEBUG: Setting progress, new enrollment:", newEnrollment);
+
+    setProgress((prev) => {
+      const updated = {
+        ...prev,
+        enrolledCourses: {
+          ...(prev.enrolledCourses || {}),
+          [courseId]: newEnrollment,
+        },
+      };
+      return updated;
+    });
   };
 
   const handleEnrollAndStart = (courseId: string) => {
@@ -325,18 +371,31 @@ export default function App() {
       return;
     }
     handleEnroll(courseId, user);
-    setSelectedCourseId(courseId);
-    setCurrentView('classroom');
+    navigate('/my-learning');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleViewDetails = (courseId: string) => {
+    navigate(`/course/${courseId}`);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSignOut = async () => {
     try {
-      localStorage.removeItem('meca_cached_user');
-      localStorage.removeItem('current_user_pwd');
-    } catch (e) {}
-    await logoutUser();
-    setCurrentView('explore');
-    setSelectedCourseId(null);
+      // Reset flags to prevent the reset progress from saving back to cloud before logout completes
+      setIsCloudProgressLoaded(false);
+      setProgress(DEFAULT_PROGRESS);
+      
+      // Clear ALL browser storage
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      await logoutUser();
+    } catch (e) {
+      console.error("Sign out error:", e);
+    }
+    navigate('/');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleUpdateEnrollment = (
@@ -351,7 +410,7 @@ export default function App() {
     const progressPercent = Math.min(100, (completedLessonIds.length / totalLessons) * 100);
 
     setProgress((prev) => {
-      const updatedEnrolled = { ...prev.enrolledCourses };
+      const updatedEnrolled = { ...(prev.enrolledCourses || {}) };
       const currentEnrollment = updatedEnrolled[courseId] || {
         courseId,
         completedLessons: [],
@@ -362,20 +421,25 @@ export default function App() {
         completedLessons: completedLessonIds,
         progress: progressPercent,
         currentLessonId,
-        completedAt: progressPercent >= 100 ? new Date().toISOString() : undefined,
       };
+      
+      if (progressPercent >= 100) {
+        updatedEnrolled[courseId].completedAt = new Date().toISOString();
+      }
 
       // Handle certificates earning automatically
-      const updatedCerts = [...prev.certificates];
+      const updatedCerts = [...(prev.certificates || [])];
       if (progressPercent >= 100 && !updatedCerts.includes(courseId)) {
         updatedCerts.push(courseId);
       }
 
-      return {
+      const nextState = {
         ...prev,
         enrolledCourses: updatedEnrolled,
         certificates: updatedCerts,
       };
+
+      return nextState;
     });
   };
 
@@ -387,7 +451,7 @@ export default function App() {
       
       // Update activity log for today
       const today = new Date().toISOString().split('T')[0];
-      const logCopy = [...prev.activityLog];
+      const logCopy = [...(prev.activityLog || [])];
       const todayIndex = logCopy.findIndex((l) => l.date === today);
 
       if (todayIndex >= 0) {
@@ -415,10 +479,10 @@ export default function App() {
 
   const handleUnlockCertificate = (courseId: string) => {
     setProgress((prev) => {
-      if (prev.certificates.includes(courseId)) return prev;
+      if ((prev.certificates || []).includes(courseId)) return prev;
       return {
         ...prev,
-        certificates: [...prev.certificates, courseId],
+        certificates: [...(prev.certificates || []), courseId],
       };
     });
   };
@@ -444,9 +508,6 @@ export default function App() {
     });
   };
 
-  const selectedCourse = courses.find((c) => c.id === selectedCourseId);
-  const activeEnrollment = selectedCourseId ? progress.enrolledCourses[selectedCourseId] : undefined;
-
   // Filter lists for "My Learning" tab
   const enrolledCoursesList = getEnrolledCourses(progress, courses);
 
@@ -455,12 +516,6 @@ export default function App() {
       
       {/* 1. BRAND NAVIGATION HEADER */}
       <Navbar
-        currentView={currentView}
-        onNavigate={(view) => {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-          setCurrentView(view);
-          setSelectedCourseId(null); // Reset detail subviews on nav shift
-        }}
         streak={progress.streak}
         totalHours={progress.totalHours}
         user={user}
@@ -472,33 +527,31 @@ export default function App() {
 
       {/* 2. DYNAMIC CONTENT MAIN ROUTING */}
       <main className="flex-grow">
-        
-        {/* ACTIVE CLASSROOM MODE */}
-        {currentView === 'classroom' && selectedCourse && activeEnrollment ? (
-          <Classroom
-            course={selectedCourse}
-            enrollment={activeEnrollment}
-            onUpdateEnrollment={handleUpdateEnrollment}
-            onAddHours={handleAddHours}
-            onBack={() => {
-              setCurrentView('my-learning');
-              setSelectedCourseId(null);
-            }}
-            onUnlockCertificate={handleUnlockCertificate}
-          />
-        ) : (
-          /* STANDARD DIRECTORIES */
-          <>
-            {/* VIEW F: POLICY PAGES */}
-            {['about', 'privacy', 'terms', 'refund'].includes(currentView) && (
-              <div className="mx-auto max-w-3xl px-4 py-20 animate-fadeIn">
-                <h1 className="text-3xl font-bold mb-6">{footerContent[currentView as keyof typeof footerContent].title}</h1>
-                <p className="text-neutral-700 leading-relaxed whitespace-pre-line">{footerContent[currentView as keyof typeof footerContent].content}</p>
-              </div>
-            )}
-
-            {/* VIEW A: EXPLORE HOME & CATALOG */}
-            {currentView === 'explore' && !selectedCourseId && (
+        <AnimatePresence mode="wait">
+          {/* @ts-expect-error React 19 types issue with Routes key */}
+          <Routes location={location} key={location.pathname}>
+            <Route path="/course/:courseId" element={
+              <PageTransition>
+                <CourseDetailsRouteWrapper
+                  courses={courses}
+                  onEnroll={handleEnrollAndStart}
+                  isEnrolled={(id) => !!progress.enrolledCourses?.[id]}
+                />
+              </PageTransition>
+            } />
+            <Route path="/classroom/:courseId" element={
+              <PageTransition>
+                <ClassroomRouteWrapper
+                  courses={courses}
+                  progress={progress}
+                  onUpdateEnrollment={handleUpdateEnrollment}
+                  onAddHours={handleAddHours}
+                  onUnlockCertificate={handleUnlockCertificate}
+                />
+              </PageTransition>
+            } />
+          <Route path="/" element={
+            <PageTransition>
               <div className="animate-fadeIn">
                 <Hero
                   courses={courses}
@@ -515,150 +568,144 @@ export default function App() {
                   <CourseCatalog
                     courses={courses}
                     onSelectCourse={(courseId) => {
-                      if (progress.enrolledCourses[courseId]) {
-                        setSelectedCourseId(courseId);
-                        setCurrentView('classroom');
+                      if (progress.enrolledCourses?.[courseId]) {
+                        navigate(`/classroom/${courseId}`);
                       } else {
-                        handleEnrollAndStart(courseId);
+                        handleViewDetails(courseId);
                       }
                     }}
-                    onEnroll={handleEnrollAndStart}
-                    enrolledCourses={progress.enrolledCourses}
+                    onEnroll={handleViewDetails}
+                    enrolledCourses={progress.enrolledCourses || {}}
                     searchQuery={searchQuery}
                     setSearchQuery={setSearchQuery}
                   />
                 </section>
               </div>
-            )}
+            </PageTransition>
+          } />
 
-            {/* VIEW B: MY LEARNING DIRECTORY */}
-            {currentView === 'my-learning' && !selectedCourseId && (
+          <Route path="/my-learning" element={
+            <PageTransition>
               <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 animate-fadeIn">
-                <div className="mb-8">
-                  <h2 className="text-2xl font-black text-neutral-900 tracking-tight">
-                    {enrolledCoursesList.length > 0 ? "My Active Courses" : "No Enrolled Courses"}
-                  </h2>
-                </div>
+              <div className="mb-8">
+                <h2 className="text-2xl font-black text-neutral-900 tracking-tight">
+                  {enrolledCoursesList.length > 0 ? "My Active Courses" : "No Enrolled Courses"}
+                </h2>
+              </div>
 
-                {enrolledCoursesList.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {enrolledCoursesList.map(({ course, enrollment }) => (
-                      <CourseCard
-                        key={course.id}
-                        course={course}
-                        enrollment={enrollment}
-                        onSelect={(courseId) => {
-                          setSelectedCourseId(courseId);
-                          setCurrentView('classroom');
-                        }}
-                        onEnroll={handleEnrollAndStart}
-                        onShowCertificate={(courseId) => setSelectedCertCourseId(courseId)}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  /* Empty state */
-                  <div className="space-y-6">
-                    {/* Popular courses section below empty state */}
-                    <div>
-                      <div className="mb-6">
-                        <h3 className="text-xl font-extrabold text-neutral-950 tracking-tight">Popular Courses</h3>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {courses.slice(0, 4).map((course) => (
-                          <CourseCard
-                            key={course.id}
-                            course={course}
-                            onSelect={(courseId) => {
-                              if (progress.enrolledCourses[courseId]) {
-                                setSelectedCourseId(courseId);
-                                setCurrentView('classroom');
-                              } else {
-                                handleEnrollAndStart(courseId);
-                              }
-                            }}
-                            onEnroll={handleEnrollAndStart}
-                          />
-                        ))}
-                      </div>
+              {enrolledCoursesList.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {enrolledCoursesList.map(({ course, enrollment }) => (
+                    <CourseCard
+                      key={course.id}
+                      course={course}
+                      enrollment={enrollment}
+                      onSelect={(courseId) => {
+                        navigate(`/classroom/${courseId}`);
+                      }}
+                      onEnroll={handleEnrollAndStart}
+                      onShowCertificate={(courseId) => setSelectedCertCourseId(courseId)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                /* Empty state */
+                <div className="space-y-6">
+                  <div>
+                    <div className="mb-6">
+                      <h3 className="text-xl font-extrabold text-neutral-950 tracking-tight">Popular Courses</h3>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                      {courses.slice(0, 4).map((course) => (
+                        <CourseCard
+                          key={course.id}
+                          course={course}
+                          onSelect={(courseId) => {
+                            if (progress.enrolledCourses?.[courseId]) {
+                              navigate(`/classroom/${courseId}`);
+                            } else {
+                              handleViewDetails(courseId);
+                            }
+                          }}
+                          onEnroll={handleViewDetails}
+                        />
+                      ))}
                     </div>
                   </div>
-                )}
-              </div>
-            )}
+                </div>
+              )}
+            </div>
+            </PageTransition>
+          } />
 
-            {/* VIEW C: STUDENT ANALYTICS DASHBOARD */}
-            {currentView === 'dashboard' && !selectedCourseId && (
+          <Route path="/dashboard" element={
+            <PageTransition>
               <div className="animate-fadeIn">
-                <StudentDashboard
-                  progress={progress}
-                  courses={courses}
-                  user={user}
-                  onSignOut={handleSignOut}
-                  isAdmin={isAdmin}
-                  onNavigate={(view) => {
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                    setCurrentView(view);
-                  }}
-                  onNavigateToCourse={(courseId) => {
-                    setSelectedCourseId(courseId);
-                    setCurrentView('classroom');
-                  }}
-                  onNavigateToExplore={() => setCurrentView('explore')}
-                  onEnroll={handleEnrollAndStart}
-                />
-              </div>
-            )}
+              <StudentDashboard
+                progress={progress}
+                courses={courses}
+                user={user}
+                onSignOut={handleSignOut}
+                isAdmin={isAdmin}
+                onEnroll={handleViewDetails}
+              />
+            </div>
+            </PageTransition>
+          } />
 
-            {/* VIEW E: ADMIN CONSOLE */}
-            {currentView === 'admin' && isAdmin && (
+          <Route path="/admin" element={
+            <PageTransition>
               <div className="animate-fadeIn">
-                <AdminPanel
-                  courses={courses}
-                  logoUrl={logoUrl}
-                  onUpdateCourses={async (newCourses) => {
-                    setCourses(newCourses);
-                    try {
-                      await saveCoursesToDB(newCourses);
-                    } catch (e) {
-                      console.error("Error saving updated courses list to Realtime Database:", e);
-                    }
-                  }}
-                  onUpdateLogo={async (newLogoUrl) => {
-                    setLogoUrl(newLogoUrl);
-                    try {
-                      await saveImageConfigs({ logoUrl: newLogoUrl });
-                    } catch (e) {
-                      console.error("Error saving updated logo configurations to Realtime Database:", e);
-                    }
-                  }}
-                  onResetDatabase={async () => {
-                    try {
-                      // Save default COURSES to DB
-                      await saveCoursesToDB(COURSES);
-                      setCourses(COURSES);
-                      // Reset logo config
-                      await saveImageConfigs({ logoUrl: "" });
-                      setLogoUrl("");
-                    } catch (e) {
-                      console.error("Error resetting Realtime Database:", e);
-                      throw e;
-                    }
-                  }}
-                  userEmail={user?.email || 'Demo Mode / Guest User'}
-                />
-              </div>
-            )}
-          </>
-        )}
+              <AdminPanel
+                courses={courses}
+                logoUrl={logoUrl}
+                onUpdateCourses={async (newCourses) => {
+                  setCourses(newCourses);
+                  try {
+                    await saveCoursesToDB(newCourses);
+                  } catch (e) {
+                    console.error("Error saving updated courses list to Realtime Database:", e);
+                  }
+                }}
+                onUpdateLogo={async (newLogoUrl) => {
+                  setLogoUrl(newLogoUrl);
+                  try {
+                    await saveImageConfigs({ logoUrl: newLogoUrl });
+                  } catch (e) {
+                    console.error("Error saving updated logo configurations to Realtime Database:", e);
+                  }
+                }}
+                onResetDatabase={async () => {
+                  try {
+                    await saveCoursesToDB(COURSES);
+                    setCourses(COURSES);
+                    await saveImageConfigs({ logoUrl: "" });
+                    setLogoUrl("");
+                  } catch (e) {
+                    console.error("Error resetting Realtime Database:", e);
+                    throw e;
+                  }
+                }}
+                userEmail={user?.email || 'Demo Mode / Guest User'}
+              />
+            </div>
+            </PageTransition>
+          } />
 
-      </main>
+          <Route path="/:page" element={
+            <PageTransition>
+              <div className="mx-auto max-w-3xl px-4 py-20 animate-fadeIn">
+              <h1 className="text-3xl font-bold mb-6">{footerContent[location.pathname.substring(1) as keyof typeof footerContent]?.title || "Page Not Found"}</h1>
+              <p className="text-neutral-700 leading-relaxed whitespace-pre-line">{footerContent[location.pathname.substring(1) as keyof typeof footerContent]?.content || "The page you are looking for does not exist."}</p>
+            </div>
+            </PageTransition>
+          } />
+        </Routes>
+      </AnimatePresence>
+    </main>
 
       {/* 3. PROFESSIONAL SUB-FOOTER */}
-      <Footer onNavigate={(view) => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        setCurrentView(view);
-      }} />
+      <Footer />
 
       {/* AUTHENTICATION ERROR MODAL */}
       {authError && (
@@ -754,16 +801,9 @@ export default function App() {
         <AuthModal 
           onClose={() => {
             setShowAuthModal(false);
-            setPendingEnrollCourseId(null);
           }}
           onSuccess={(loggedUser) => {
             setUser(loggedUser);
-            if (pendingEnrollCourseId) {
-              handleEnroll(pendingEnrollCourseId, loggedUser);
-              setSelectedCourseId(pendingEnrollCourseId);
-              setCurrentView('classroom');
-              setPendingEnrollCourseId(null);
-            }
           }}
         />
       )}

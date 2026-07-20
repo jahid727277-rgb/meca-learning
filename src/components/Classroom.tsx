@@ -6,6 +6,7 @@ import {
   BookOpen, HelpCircle, ChevronRight, Sparkles, Trophy, Award, RotateCcw,
   FileText, X, ExternalLink, ChevronDown, ChevronUp
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 const LESSON_NOTES: { [lessonId: string]: { title: string; content: string; pdfUrl?: string } } = {
   'les-1': {
@@ -95,6 +96,10 @@ export default function Classroom({
   const [currentLesson, setCurrentLesson] = useState<Lesson>(initialLesson);
   const [showClassNotes, setShowClassNotes] = useState<boolean>(false);
 
+  useEffect(() => {
+    setCurrentLesson(initialLesson);
+  }, [enrollment.currentLessonId]);
+
   const initialSection = course.syllabus.find((s) => s.lessons.some((l) => l.id === initialLesson.id));
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     [initialSection?.id || '']: true
@@ -110,7 +115,7 @@ export default function Classroom({
     setSelectedAnswers({});
     setQuizSubmitted(false);
     setQuizScore(null);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo(0, 0);
   }, [currentLesson]);
 
   const handleLessonSelect = (lesson: Lesson) => {
@@ -119,7 +124,7 @@ export default function Classroom({
 
   const handleMarkComplete = () => {
     // Add lesson ID to completed list if not already present
-    const completed = [...enrollment.completedLessons];
+    const completed = [...(enrollment.completedLessons || [])];
     if (!completed.includes(currentLesson.id)) {
       completed.push(currentLesson.id);
       
@@ -178,15 +183,16 @@ export default function Classroom({
     setQuizScore(null);
   };
 
-  const isCurrentLessonCompleted = enrollment.completedLessons.includes(currentLesson.id);
+  const isCurrentLessonCompleted = (enrollment.completedLessons || []).includes(currentLesson.id);
   const totalLessons = allLessons.length;
-  const completedLessonsCount = enrollment.completedLessons.length;
+  const completedLessonsCount = (enrollment.completedLessons || []).length;
   const progressPercent = (completedLessonsCount / totalLessons) * 100;
 
   const note = LESSON_NOTES[currentLesson.id];
 
   return (
     <div className="bg-neutral-50/30 min-h-screen">
+
       {/* Cinematic Global Video Player Area (Full Width under Navbar) */}
       {currentLesson.type === 'video' && (
         <div className="w-full bg-black z-20 relative">
@@ -400,7 +406,7 @@ export default function Classroom({
                       <div className="border-t border-neutral-100 bg-neutral-50/30 divide-y divide-neutral-100/60">
                         {sec.lessons.map((les) => {
                           const isSelected = currentLesson.id === les.id;
-                          const isDone = enrollment.completedLessons.includes(les.id);
+                          const isDone = (enrollment.completedLessons || []).includes(les.id);
                           
                           let bgStyle = 'hover:bg-neutral-100/60';
                           let labelColor = 'text-neutral-600 hover:text-neutral-900';

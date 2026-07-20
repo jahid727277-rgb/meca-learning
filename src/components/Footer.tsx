@@ -6,6 +6,7 @@ import {
   Phone, 
   GraduationCap
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export const footerContent = {
   about: {
@@ -26,11 +27,9 @@ export const footerContent = {
   }
 };
 
-interface FooterProps {
-  onNavigate: (view: string) => void;
-}
+export default function Footer() {
+  const navigate = useNavigate();
 
-export default function Footer({ onNavigate }: FooterProps) {
   return (
     <footer className="bg-black text-white py-6 px-6">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -67,7 +66,10 @@ export default function Footer({ onNavigate }: FooterProps) {
               {Object.keys(footerContent).map((key) => (
                 <li key={key}>
                   <button 
-                    onClick={() => onNavigate(key)}
+                    onClick={() => {
+                      navigate(`/${key}`);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
                     className="text-white hover:text-orange-500 transition-colors text-left flex items-center gap-2 text-sm"
                   >
                     <span>{'>'}</span> {key.charAt(0).toUpperCase() + key.slice(1)}

@@ -3,6 +3,7 @@ import { Course, Enrollment } from '../types';
 import { Clock, BookOpen, Star, Sparkles, Award } from 'lucide-react';
 import { formatBDTPrice } from '../utils/currency';
 import ImageWithSkeleton from './ImageWithSkeleton';
+import { motion } from 'motion/react';
 
 interface CourseCardProps {
   key?: string | number;
