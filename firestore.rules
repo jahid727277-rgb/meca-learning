@@ -6,7 +6,7 @@ service cloud.firestore {
         request.auth.uid == userId ||
         request.auth.token.email == userId ||
         request.auth.token.phone_number == userId ||
-        request.auth.token.email in ['jahid1882008@gmail.com', 'mecalearning@gmail.com'] ||
+        request.auth.token.email == 'jahid1882008@gmail.com' ||
         (resource != null && resource.data.uid == request.auth.uid) ||
         (request.resource != null && request.resource.data.uid == request.auth.uid)
       );

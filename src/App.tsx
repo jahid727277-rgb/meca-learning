@@ -69,7 +69,7 @@ export default function App() {
       return null;
     }
   });
-  const ADMIN_EMAILS = ['jahid1882008@gmail.com', 'mecalearning@gmail.com'];
+  const ADMIN_EMAILS = ['jahid1882008@gmail.com'];
   const isAdmin = user !== null && ADMIN_EMAILS.includes(user.email || '');
 
   const [authLoading, setAuthLoading] = useState<boolean>(true);
@@ -125,7 +125,7 @@ export default function App() {
         localStorage.setItem('meca_cached_user', JSON.stringify(simpleUser));
 
         // Auto cleanup old UID-based user records if current user is an admin
-        const ADMIN_EMAILS = ['jahid1882008@gmail.com', 'mecalearning@gmail.com'];
+        const ADMIN_EMAILS = ['jahid1882008@gmail.com'];
         if (currentUser.email && ADMIN_EMAILS.includes(currentUser.email)) {
           cleanupUIDUsers().catch(err => console.warn("Failed to auto-cleanup UID users:", err));
         }
