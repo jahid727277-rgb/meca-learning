@@ -2,19 +2,30 @@
   "collections": {
     "users": {
       "schema": {
-        "progress": {
-          "streak": "number",
-          "totalHours": "number",
-          "enrolledCourses": "map",
-          "certificates": "array",
-          "activityLog": "array"
-        },
-        "enrolledCoursesList": "array",
+        "enrolledCourses": "map",
         "updatedAt": "string"
       },
       "rules": {
         "read": "auth != null && auth.uid == userId",
         "write": "auth != null && auth.uid == userId"
+      }
+    },
+    "courses": {
+      "schema": {
+        "id": "string",
+        "title": "string",
+        "description": "string",
+        "price": "number",
+        "category": "string",
+        "thumbnail": "string",
+        "syllabus": "array",
+        "instructor": "map",
+        "duration": "string",
+        "totalLessons": "number"
+      },
+      "rules": {
+        "read": "true",
+        "write": "true"
       }
     }
   }

@@ -11,11 +11,12 @@ export interface QuizQuestion {
 export interface Lesson {
   id: string;
   title: string;
-  duration: string;
+  duration?: string;
   type: LessonType;
   videoUrl?: string; // e.g. for mock embed or custom video placeholder
   content?: string;  // markdown/text content for reading lessons
   quiz?: QuizQuestion[];
+  classNotePdfUrl?: string; // Add PDF URL for class notes
 }
 
 export interface SyllabusSection {
@@ -42,36 +43,20 @@ export interface Course {
   reviewCount: number;
   duration: string;
   lessonsCount: number;
-  price: number;
+  price: string | number;
   thumbnail: string;
   tags: string[];
   syllabus: SyllabusSection[];
+  promoVideoUrl?: string;
+  detailsDescription?: string;
 }
 
 export interface Enrollment {
   courseId: string;
   courseTitle?: string;
-  progress: number; // 0 to 100
-  completedLessons: string[]; // List of lesson IDs
-  completedAt?: string; // Date string when course was completed
-  currentLessonId?: string;
-  quizScores?: { [lessonId: string]: number }; // Score percentage for quizzes
+  enrolledAt: string;
 }
 
 export interface UserProgress {
-  streak: number;
-  lastStudyDate?: string;
-  totalHours: number;
   enrolledCourses: { [courseId: string]: Enrollment };
-  certificates: string[]; // Course IDs for earned certificates
-  activityLog: { date: string; minutes: number }[];
-}
-
-export interface Review {
-  id: string;
-  userName: string;
-  userAvatar?: string;
-  rating: number;
-  comment: string;
-  date: string;
 }

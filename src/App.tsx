@@ -11,9 +11,9 @@ import CourseDetailsView from './components/CourseDetailsView';
 import CourseDetailsRouteWrapper from './components/CourseDetailsRouteWrapper';
 import ClassroomRouteWrapper from './components/ClassroomRouteWrapper';
 import ImageWithSkeleton from './components/ImageWithSkeleton';
-import { COURSES, REVIEWS } from './data/courses';
+import { COURSES } from './data/courses';
 import { normalizeCourse, getEnrolledCourses } from './utils/courseHelper';
-import { UserProgress, Enrollment, Course, Review } from './types';
+import { UserProgress, Enrollment, Course } from './types';
 import { formatBDTPrice } from './utils/currency';
 import { 
   ArrowLeft, Clock, BookOpen, Star, Sparkles, ShieldCheck, 
@@ -28,33 +28,29 @@ import {
   getCoursesFromDB,
   saveCoursesToDB,
   getImageConfigs,
-  saveImageConfigs
+  saveImageConfigs,
+  clearAllUserEnrollments,
+  cleanupUIDUsers
 } from './lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { AnimatePresence, motion } from 'framer-motion';
 import AuthModal from './components/AuthModal';
 import Footer, { footerContent } from './components/Footer';
 import AdminPanel from './components/AdminPanel';
-import Certificates from './components/Certificates';
 
 const mecaLearningLogo = '/logo_web.png';
 
 const LOCAL_STORAGE_KEY = 'meca_learning_progress_v1';
-const REVIEWS_STORAGE_KEY = 'meca_learning_reviews_v1';
 
 const DEFAULT_PROGRESS: UserProgress = {
-  streak: 0,
-  totalHours: 0,
   enrolledCourses: {},
-  certificates: [],
-  activityLog: [],
 };
 
 const PageTransition = ({ children }: { children: React.ReactNode }) => (
   <motion.div
-    initial={{ opacity: 0, y: 4 }}
-    animate={{ opacity: 1, y: 0 }}
-    exit={{ opacity: 0, y: -4 }}
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
     transition={{ duration: 0.15, ease: 'easeOut' }}
   >
     {children}
@@ -89,7 +85,6 @@ export default function App() {
   const [pendingEnrollCourseId, setPendingEnrollCourseId] = useState<string | null>(null);
 
   // Navigation: 'explore' | 'my-learning' | 'dashboard' | 'classroom' | 'admin'
-  const [selectedCertCourseId, setSelectedCertCourseId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Course detailed section state - expanded syllabus indices
@@ -108,17 +103,6 @@ export default function App() {
     return DEFAULT_PROGRESS;
   });
 
-  // Custom reviews list
-  const [reviewsMap, setReviewsMap] = useState<{ [courseId: string]: Review[] }>(() => {
-    // Set initial default reviews
-    const initial: { [courseId: string]: Review[] } = {};
-    COURSES.forEach((c) => {
-      // Seed with some of the default reviews
-      initial[c.id] = [...REVIEWS];
-    });
-    return initial;
-  });
-
   // Scroll to top on route change with smooth behavior
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -127,67 +111,59 @@ export default function App() {
   // Listen to Auth changes and load progress from Firebase
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
       setAuthLoading(false);
       
       if (currentUser) {
-        try {
-          const simpleUser = {
-            uid: currentUser.uid,
-            displayName: currentUser.displayName,
-            email: currentUser.email,
-            photoURL: currentUser.photoURL,
-          };
-          localStorage.setItem('meca_cached_user', JSON.stringify(simpleUser));
-        } catch (e) {}
+        // User logged in
+        const simpleUser = {
+          uid: currentUser.uid,
+          displayName: currentUser.displayName,
+          email: currentUser.email,
+          photoURL: currentUser.photoURL,
+        };
+        setUser(currentUser);
+        localStorage.setItem('meca_cached_user', JSON.stringify(simpleUser));
+
+        // Auto cleanup old UID-based user records if current user is an admin
+        const ADMIN_EMAILS = ['jahid1882008@gmail.com', 'mecalearning@gmail.com'];
+        if (currentUser.email && ADMIN_EMAILS.includes(currentUser.email)) {
+          cleanupUIDUsers().catch(err => console.warn("Failed to auto-cleanup UID users:", err));
+        }
 
         try {
           setIsCloudProgressLoaded(false);
           const cloudProgress = await getUserProgress(currentUser.uid);
+          
           if (cloudProgress) {
-            // Merge local progress with cloud progress so newly enrolled courses are not lost!
-            setProgress((prev) => {
-              const mergedEnrolled = {
-                ...(prev.enrolledCourses || {}),
-                ...(cloudProgress.enrolledCourses || {}),
-              };
-              
-              const mergedCertificates = Array.from(new Set([
-                ...(cloudProgress.certificates || []),
-                ...(prev.certificates || [])
-              ]));
-
-              return {
-                ...cloudProgress,
-                enrolledCourses: mergedEnrolled,
-                certificates: mergedCertificates,
-                streak: Math.max(cloudProgress.streak || 0, prev.streak || 0),
-                totalHours: Math.max(cloudProgress.totalHours || 0, prev.totalHours || 0),
-                lastStudyDate: cloudProgress.lastStudyDate || prev.lastStudyDate || "",
-                activityLog: cloudProgress.activityLog || prev.activityLog || [],
-              };
-            });
+            // Strictly prefer cloud progress over local progress when logging in
+            // This prevents "ghost" enrollments from previous local sessions from contaminating the account
+            setProgress(cloudProgress);
           } else {
-            // First time logging in, backup local progress to Firebase
-            await saveUserProgress(currentUser.uid, progress);
+            // New user with no cloud progress - save their current local session if it exists
+            // Only do this if they were NOT already logged in before (meaning this is a fresh first-time login, not a page refresh)
+            const wasAlreadyLoggedIn = !!localStorage.getItem('meca_cached_user');
+            if (!wasAlreadyLoggedIn && Object.keys(progress.enrolledCourses).length > 0) {
+              await saveUserProgress(currentUser.uid, progress);
+            } else {
+              // Existing user whose progress was deleted in Firestore -> wipe local progress cache as well
+              setProgress(DEFAULT_PROGRESS);
+              localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(DEFAULT_PROGRESS));
+            }
           }
           setIsCloudProgressLoaded(true);
         } catch (error: any) {
-          setIsCloudProgressLoaded(true); // Fallback to allow saving even on failure/offline
-          if (error && error.message && error.message.includes("offline")) {
-            console.warn("Firebase client is offline. Unable to fetch online progress.");
-          } else {
-            console.warn("Error fetching user progress from Firebase:", error?.message || error);
-          }
+          console.warn("Error syncing user progress:", error?.message || error);
+          setIsCloudProgressLoaded(true);
         }
       } else {
+        // User logged out - clean up everything immediately
+        setUser(null);
+        setProgress(DEFAULT_PROGRESS);
+        setIsCloudProgressLoaded(false);
         try {
-          // Clear all browser storage to ensure no data leaks between users
           localStorage.clear();
           sessionStorage.clear();
         } catch (e) {}
-        setProgress(DEFAULT_PROGRESS);
-        setIsCloudProgressLoaded(false);
       }
     });
     return () => unsubscribe();
@@ -301,8 +277,6 @@ export default function App() {
     }
   }, [progress, user, isCloudProgressLoaded]);
 
-  // No longer saving reviewsMap to localStorage
-
   const handleSignIn = async () => {
     try {
       setAuthError(null);
@@ -345,9 +319,7 @@ export default function App() {
     const newEnrollment: Enrollment = {
       courseId,
       courseTitle: course.title,
-      progress: 0,
-      completedLessons: [],
-      currentLessonId: firstLessonId,
+      enrolledAt: new Date().toISOString(),
     };
 
     console.log("DEBUG: Setting progress, new enrollment:", newEnrollment);
@@ -361,6 +333,17 @@ export default function App() {
         },
       };
       return updated;
+    });
+  };
+
+  const handleUnenroll = (courseId: string) => {
+    setProgress((prev) => {
+      const updatedEnrolledCourses = { ...(prev.enrolledCourses || {}) };
+      delete updatedEnrolledCourses[courseId];
+      return {
+        ...prev,
+        enrolledCourses: updatedEnrolledCourses,
+      };
     });
   };
 
@@ -398,116 +381,6 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleUpdateEnrollment = (
-    courseId: string,
-    completedLessonIds: string[],
-    currentLessonId: string
-  ) => {
-    const course = courses.find((c) => c.id === courseId);
-    if (!course) return;
-
-    const totalLessons = course.syllabus.flatMap((s) => s.lessons).length;
-    const progressPercent = Math.min(100, (completedLessonIds.length / totalLessons) * 100);
-
-    setProgress((prev) => {
-      const updatedEnrolled = { ...(prev.enrolledCourses || {}) };
-      const currentEnrollment = updatedEnrolled[courseId] || {
-        courseId,
-        completedLessons: [],
-      };
-
-      updatedEnrolled[courseId] = {
-        ...currentEnrollment,
-        completedLessons: completedLessonIds,
-        progress: progressPercent,
-        currentLessonId,
-      };
-      
-      if (progressPercent >= 100) {
-        updatedEnrolled[courseId].completedAt = new Date().toISOString();
-      }
-
-      // Handle certificates earning automatically
-      const updatedCerts = [...(prev.certificates || [])];
-      if (progressPercent >= 100 && !updatedCerts.includes(courseId)) {
-        updatedCerts.push(courseId);
-      }
-
-      const nextState = {
-        ...prev,
-        enrolledCourses: updatedEnrolled,
-        certificates: updatedCerts,
-      };
-
-      return nextState;
-    });
-  };
-
-  const handleAddHours = (minutes: number) => {
-    setProgress((prev) => {
-      const hoursAdd = minutes / 60;
-      // Increment total study hours
-      const nextHours = prev.totalHours + hoursAdd;
-      
-      // Update activity log for today
-      const today = new Date().toISOString().split('T')[0];
-      const logCopy = [...(prev.activityLog || [])];
-      const todayIndex = logCopy.findIndex((l) => l.date === today);
-
-      if (todayIndex >= 0) {
-        logCopy[todayIndex].minutes += minutes;
-      } else {
-        logCopy.push({ date: today, minutes });
-      }
-
-      // Automatically bump streak if last study date is different
-      const lastStudy = prev.lastStudyDate;
-      let nextStreak = prev.streak;
-      if (lastStudy !== today) {
-        nextStreak = prev.streak + 1;
-      }
-
-      return {
-        ...prev,
-        totalHours: nextHours,
-        activityLog: logCopy,
-        streak: nextStreak,
-        lastStudyDate: today,
-      };
-    });
-  };
-
-  const handleUnlockCertificate = (courseId: string) => {
-    setProgress((prev) => {
-      if ((prev.certificates || []).includes(courseId)) return prev;
-      return {
-        ...prev,
-        certificates: [...(prev.certificates || []), courseId],
-      };
-    });
-  };
-
-  const handleAddReview = (courseId: string, reviewData: Omit<Review, 'id' | 'date'>) => {
-    const newReview: Review = {
-      ...reviewData,
-      id: `rev-${Math.random().toString(36).substr(2, 9)}`,
-      date: new Date().toLocaleDateString('en-US', {
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
-      }),
-      userAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100',
-    };
-
-    setReviewsMap((prev) => {
-      const current = prev[courseId] || [];
-      return {
-        ...prev,
-        [courseId]: [newReview, ...current],
-      };
-    });
-  };
-
   // Filter lists for "My Learning" tab
   const enrolledCoursesList = getEnrolledCourses(progress, courses);
 
@@ -516,8 +389,6 @@ export default function App() {
       
       {/* 1. BRAND NAVIGATION HEADER */}
       <Navbar
-        streak={progress.streak}
-        totalHours={progress.totalHours}
         user={user}
         onSignIn={() => setShowAuthModal(true)}
         onSignOut={handleSignOut}
@@ -544,9 +415,6 @@ export default function App() {
                 <ClassroomRouteWrapper
                   courses={courses}
                   progress={progress}
-                  onUpdateEnrollment={handleUpdateEnrollment}
-                  onAddHours={handleAddHours}
-                  onUnlockCertificate={handleUnlockCertificate}
                 />
               </PageTransition>
             } />
@@ -575,6 +443,7 @@ export default function App() {
                       }
                     }}
                     onEnroll={handleViewDetails}
+                    onUnenroll={handleUnenroll}
                     enrolledCourses={progress.enrolledCourses || {}}
                     searchQuery={searchQuery}
                     setSearchQuery={setSearchQuery}
@@ -604,7 +473,7 @@ export default function App() {
                         navigate(`/classroom/${courseId}`);
                       }}
                       onEnroll={handleEnrollAndStart}
-                      onShowCertificate={(courseId) => setSelectedCertCourseId(courseId)}
+                      onUnenroll={handleUnenroll}
                     />
                   ))}
                 </div>
@@ -648,6 +517,7 @@ export default function App() {
                 onSignOut={handleSignOut}
                 isAdmin={isAdmin}
                 onEnroll={handleViewDetails}
+                onUnenroll={handleUnenroll}
               />
             </div>
             </PageTransition>
@@ -660,6 +530,7 @@ export default function App() {
                 courses={courses}
                 logoUrl={logoUrl}
                 onUpdateCourses={async (newCourses) => {
+                  console.log("App.tsx onUpdateCourses called with:", newCourses.length, "courses");
                   setCourses(newCourses);
                   try {
                     await saveCoursesToDB(newCourses);
@@ -677,12 +548,22 @@ export default function App() {
                 }}
                 onResetDatabase={async () => {
                   try {
+                    // 1. Wipe all user progress from Firestore and Realtime Database
+                    await clearAllUserEnrollments();
+
+                    // 2. Clear current user's local state and localStorage
+                    localStorage.removeItem(LOCAL_STORAGE_KEY);
+                    setProgress(DEFAULT_PROGRESS);
+
+                    // 3. Reset courses to default and save them to Firestore + RTDB
                     await saveCoursesToDB(COURSES);
                     setCourses(COURSES);
+
+                    // 4. Reset logo
                     await saveImageConfigs({ logoUrl: "" });
-                    setLogoUrl("");
+                    setLogoUrl(mecaLearningLogo);
                   } catch (e) {
-                    console.error("Error resetting Realtime Database:", e);
+                    console.error("Error resetting database:", e);
                     throw e;
                   }
                 }}
@@ -805,15 +686,6 @@ export default function App() {
           onSuccess={(loggedUser) => {
             setUser(loggedUser);
           }}
-        />
-      )}
-
-      {/* Certificate modal popup */}
-      {selectedCertCourseId && (
-        <Certificates 
-          courseId={selectedCertCourseId} 
-          courses={courses}
-          onClose={() => setSelectedCertCourseId(null)} 
         />
       )}
     </div>

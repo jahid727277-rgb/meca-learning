@@ -1,4 +1,4 @@
-import { Course, Review } from '../types';
+import { Course } from '../types';
 
 export const CATEGORIES = [
   'All',
@@ -249,32 +249,5 @@ Automation pipelines are prone to unpredictable changes, API failures, or rate-l
         ]
       }
     ]
-  }
-];
-
-export const REVIEWS: Review[] = [
-  {
-    id: 'r1',
-    userName: 'Tanvir Hossain',
-    userAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100',
-    rating: 5,
-    comment: 'The Prompt Engineering course is excellent. The examples of zero-shot vs few-shot and XML tagging are directly applicable to my job. Outstanding material!',
-    date: 'June 24, 2026'
-  },
-  {
-    id: 'r2',
-    userName: 'Sumaiya Akter',
-    userAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100',
-    rating: 5,
-    comment: 'The Autonomous AI Agents course is mind-blowing! Writing custom tool-binds and seeing the model reason state changes has given me a huge edge.',
-    date: 'May 12, 2026'
-  },
-  {
-    id: 'r3',
-    userName: 'Imran Khan',
-    userAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=100',
-    rating: 5,
-    comment: 'Exceptional, hands-on automation lessons. I automated my client onboarding document flow in a single afternoon using the code patterns taught here.',
-    date: 'July 01, 2026'
   }
 ];

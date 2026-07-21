@@ -51,10 +51,11 @@ export function normalizeCourse(c: any): Course {
       return {
         id: les?.id || `les-${secIdx}-${lesIdx}-${Date.now()}`,
         title: les?.title || '',
-        duration: les?.duration || '',
+        duration: les?.duration || undefined,
         type: les?.type || 'video',
         videoUrl: les?.videoUrl || '',
         content: les?.content || '',
+        classNotePdfUrl: les?.classNotePdfUrl || undefined,
         quiz: quiz.length > 0 ? quiz : undefined
       };
     });
@@ -84,20 +85,23 @@ export function normalizeCourse(c: any): Course {
     reviewCount: (c.reviewCount !== undefined && !isNaN(Number(c.reviewCount))) ? Number(c.reviewCount) : 1,
     duration: c.duration || '10h 30m',
     lessonsCount: (c.lessonsCount !== undefined && !isNaN(Number(c.lessonsCount)) && Number(c.lessonsCount) > 0) ? Number(c.lessonsCount) : totalLessons,
-    price: (c.price !== undefined && !isNaN(Number(c.price))) ? Number(c.price) : 49.99,
+    price: (c.price !== undefined && c.price !== null && c.price !== '') ? c.price : 49.99,
     thumbnail: (() => {
+      const thumbStr = String(c.thumbnail || '').trim();
+      if (thumbStr && (thumbStr.startsWith('http://') || thumbStr.startsWith('https://'))) {
+        return thumbStr;
+      }
       const idStr = String(c.id || '').toLowerCase();
       const titleStr = String(c.title || '').toLowerCase();
       if (idStr === 'ai-101' || titleStr.includes('prompt engineering') || titleStr.includes('generative ai')) {
-        return thumbPromptEng;
+        return 'https://res.cloudinary.com/djjhol6dg/image/upload/v1784463289/1784463216153_jtoqbe.png';
       }
       if (idStr === 'ai-202' || titleStr.includes('agent') || titleStr.includes('multi-agent')) {
-        return thumbAiAgents;
+        return 'https://res.cloudinary.com/djjhol6dg/image/upload/v1783557260/1000263343-clean_fuquye.png';
       }
       if (idStr === 'ai-303' || titleStr.includes('automation') || titleStr.includes('workflow')) {
-        return thumbAiAuto;
+        return 'https://res.cloudinary.com/djjhol6dg/image/upload/v1783557260/1000263336-clean_nzjfqt.png';
       }
-      const thumbStr = String(c.thumbnail || '').trim();
       if (!thumbStr) {
         return 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&q=80&w=800';
       }

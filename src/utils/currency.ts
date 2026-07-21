@@ -5,14 +5,41 @@
  * @param usdPrice The price in USD
  * @returns The formatted price string in Bangladeshi Taka (e.g. ৳৫,৯৯৯)
  */
-export function formatBDTPrice(usdPrice: number): string {
-  if (typeof usdPrice !== 'number' || isNaN(usdPrice)) return '৳০';
+export function formatBDTPrice(price: string | number): string {
+  if (price === undefined || price === null || price === '') return '৳ ০';
   
-  // Convert 1 USD = 120 BDT
-  const bdtAmount = Math.round(usdPrice * 120);
+  const originalUsdPrices = [49.99, 79.99, 99.99];
   
-  // Format with comma separating thousands
-  return `৳ ${bdtAmount.toLocaleString('en-US')}`;
+  if (typeof price === 'number') {
+    if (isNaN(price)) return '৳ ০';
+    if (originalUsdPrices.includes(price)) {
+      // Convert original USD prices to BDT
+      const bdtAmount = Math.round(price * 120);
+      return `৳ ${bdtAmount.toLocaleString('en-US')}`;
+    } else {
+      // Other numbers are already BDT
+      return `৳ ${Math.round(price).toLocaleString('en-US')}`;
+    }
+  }
+  
+  const trimmed = price.trim();
+  
+  // Try to parse as a number (only if it consists of standard English digits, dot, commas)
+  const cleanNumericStr = trimmed.replace(/,/g, '');
+  const parsedNum = Number(cleanNumericStr);
+  
+  if (!isNaN(parsedNum) && cleanNumericStr !== '') {
+    if (originalUsdPrices.includes(parsedNum)) {
+      const bdtAmount = Math.round(parsedNum * 120);
+      return `৳ ${bdtAmount.toLocaleString('en-US')}`;
+    } else {
+      // Otherwise, it's a BDT amount directly
+      return `৳ ${Math.round(parsedNum).toLocaleString('en-US')}`;
+    }
+  }
+  
+  // For any other text (e.g. "ফ্রি", "১০,০০০ টাকা", "৳ ৫০০", "Free"), return exactly as is!
+  return trimmed;
 }
 
 /**

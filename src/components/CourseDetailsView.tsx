@@ -27,7 +27,7 @@ export default function CourseDetailsView({ course, onBack, onEnroll, isEnrolled
   };
 
   // The user requested to play this specific youtube link for the intro video: https://youtu.be/v1gT1hxdrWU
-  const promoVideoUrl = 'https://youtu.be/v1gT1hxdrWU';
+  const promoVideoUrl = course.promoVideoUrl || 'https://youtu.be/v1gT1hxdrWU';
 
   return (
     <div className="min-h-screen bg-neutral-50">
@@ -52,9 +52,10 @@ export default function CourseDetailsView({ course, onBack, onEnroll, isEnrolled
         <div className="w-full">
           <CourseCard
             course={course}
-            enrollment={isEnrolled ? { courseId: course.id, progress: 0, completedLessons: [], currentLessonId: '' } : undefined}
+            enrollment={isEnrolled ? { courseId: course.id, enrolledAt: new Date().toISOString() } : undefined}
             onSelect={() => onEnroll(course.id)}
             onEnroll={() => onEnroll(course.id)}
+            enrollButtonLabel="এনরোল করুন"
           />
         </div>
 
@@ -62,11 +63,11 @@ export default function CourseDetailsView({ course, onBack, onEnroll, isEnrolled
         <div className="space-y-4 pt-2">
           <h2 className="text-xl font-black text-neutral-950 flex items-center gap-2">
             <span className="w-1.5 h-6 bg-orange-600 rounded-full"></span>
-            কোর্স ডেসক্রিপশন
+            About the course
           </h2>
           
           <p className="text-base sm:text-lg text-neutral-800 font-extrabold leading-relaxed whitespace-pre-line">
-            {course.description}
+            {course.detailsDescription || course.description}
           </p>
         </div>
       </div>

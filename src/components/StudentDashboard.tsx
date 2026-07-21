@@ -3,7 +3,6 @@ import { UserProgress, Course } from '../types';
 import { Award, BookOpen, ChevronRight, LogOut, Edit3, Check, KeyRound, User, Smartphone, Mail } from 'lucide-react';
 import { updateProfile, updatePassword } from 'firebase/auth';
 import { auth } from '../lib/firebase';
-import Certificates from './Certificates';
 import CourseCard from './CourseCard';
 import ImageWithSkeleton from './ImageWithSkeleton';
 import { useNavigate } from 'react-router-dom';
@@ -15,6 +14,7 @@ interface StudentDashboardProps {
   onSignOut: () => void;
   isAdmin: boolean;
   onEnroll: (courseId: string) => void;
+  onUnenroll?: (courseId: string) => void;
 }
 
 export default function StudentDashboard({
@@ -24,9 +24,9 @@ export default function StudentDashboard({
   onSignOut,
   isAdmin,
   onEnroll,
+  onUnenroll,
 }: StudentDashboardProps) {
   const navigate = useNavigate();
-  const [selectedCertCourseId, setSelectedCertCourseId] = useState<string | null>(null);
   
   // Profile editing state
   const [isEditing, setIsEditing] = useState(false);
@@ -203,8 +203,12 @@ export default function StudentDashboard({
                 disabled={!isEditing}
                 value={isEditing ? editName : (user?.displayName || 'Name..')}
                 onChange={(e) => setEditName(e.target.value)}
-                className={`w-full pl-9 pr-3 py-2 bg-neutral-50 border border-neutral-300 text-neutral-800 text-xs font-semibold rounded-xl transition-all focus:outline-none ${
-                  isEditing ? 'bg-white focus:ring-2 focus:ring-orange-500/15 focus:border-neutral-400' : 'cursor-not-allowed select-none'
+                className={`w-full pl-9 pr-3 py-2 text-xs font-semibold rounded-xl transition-all focus:outline-none ${
+                  isEditing 
+                    ? 'bg-white border border-neutral-300 text-neutral-800 focus:ring-2 focus:ring-orange-500/15 focus:border-neutral-400' 
+                    : user 
+                      ? 'bg-neutral-50 border border-neutral-300 text-neutral-800 cursor-not-allowed select-none'
+                      : 'bg-neutral-50/50 border border-neutral-200 text-neutral-400 cursor-not-allowed select-none'
                 }`}
                 placeholder="Name.."
               />
@@ -221,7 +225,7 @@ export default function StudentDashboard({
               <input
                 type="text"
                 disabled={true}
-                value={displayEmailOrPhone}
+                value={displayEmailOrPhone || 'Email or Phone Number'}
                 className="w-full pl-9 pr-3 py-2 bg-neutral-50/50 border border-neutral-200 text-neutral-400 text-xs font-semibold rounded-xl cursor-not-allowed select-none"
                 placeholder="Email or Phone Number"
               />
@@ -238,11 +242,15 @@ export default function StudentDashboard({
               <input
                 type={isEditing ? "text" : "password"}
                 disabled={!isEditing}
-                value={isEditing ? newPassword : "••••••••"}
+                value={isEditing ? newPassword : (user ? "••••••••" : ".......")}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder={isEditing ? "নতুন পাসওয়ার্ড লিখুন" : "••••••••"}
-                className={`w-full pl-9 pr-3 py-2 bg-neutral-50 border border-neutral-300 text-neutral-800 text-xs font-semibold rounded-xl transition-all focus:outline-none ${
-                  isEditing ? 'bg-white focus:ring-2 focus:ring-orange-500/15 focus:border-neutral-400' : 'cursor-not-allowed select-none'
+                placeholder={isEditing ? "নতুন পাসওয়ার্ড লিখুন" : (user ? "••••••••" : ".......")}
+                className={`w-full pl-9 pr-3 py-2 text-xs font-semibold rounded-xl transition-all focus:outline-none ${
+                  isEditing 
+                    ? 'bg-white border border-neutral-300 text-neutral-800 focus:ring-2 focus:ring-orange-500/15 focus:border-neutral-400' 
+                    : user 
+                      ? 'bg-neutral-50 border border-neutral-300 text-neutral-800 cursor-not-allowed select-none'
+                      : 'bg-neutral-50/50 border border-neutral-200 text-neutral-400 cursor-not-allowed select-none'
                 }`}
               />
             </div>
@@ -292,7 +300,7 @@ export default function StudentDashboard({
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
                 onEnroll={() => {}}
-                onShowCertificate={(courseId) => setSelectedCertCourseId(courseId)}
+                onUnenroll={onUnenroll}
               />
             ))}
           </div>
@@ -324,15 +332,6 @@ export default function StudentDashboard({
           </div>
         )}
       </div>
-
-      {/* Certificate modal popup */}
-      {selectedCertCourseId && (
-        <Certificates 
-          courseId={selectedCertCourseId} 
-          courses={courses}
-          onClose={() => setSelectedCertCourseId(null)} 
-        />
-      )}
     </div>
   );
 }

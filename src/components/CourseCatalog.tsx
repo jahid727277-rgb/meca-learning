@@ -7,6 +7,7 @@ interface CourseCatalogProps {
   courses: Course[];
   onSelectCourse: (courseId: string) => void;
   onEnroll: (courseId: string) => void;
+  onUnenroll?: (courseId: string) => void;
   enrolledCourses: { [courseId: string]: Enrollment };
   searchQuery: string;
   setSearchQuery: (query: string) => void;
@@ -16,6 +17,7 @@ export default function CourseCatalog({
   courses,
   onSelectCourse,
   onEnroll,
+  onUnenroll,
   enrolledCourses,
   searchQuery,
   setSearchQuery,
@@ -74,6 +76,7 @@ export default function CourseCatalog({
                   enrollment={enrolledCourses[course.id]}
                   onSelect={onSelectCourse}
                   onEnroll={onEnroll}
+                  onUnenroll={onUnenroll}
                 />
               ))}
             </div>

@@ -6,8 +6,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 
 interface NavbarProps {
-  streak: number;
-  totalHours: number;
   user: any;
   onSignIn: () => void;
   onSignOut: () => void;
@@ -16,8 +14,6 @@ interface NavbarProps {
 }
 
 export default function Navbar({ 
-  streak, 
-  totalHours,
   user,
   onSignIn,
   onSignOut,
@@ -73,17 +69,8 @@ export default function Navbar({
           })}
         </nav>
 
-        {/* Right Side - Study Stats & Profile */}
+        {/* Right Side - Profile */}
         <div className="flex items-center gap-4">
-          {/* Study Hours Badge */}
-          <div 
-            title="Total Active Study Hours"
-            className="hidden sm:flex items-center gap-1 bg-white/40 backdrop-blur-xl text-orange-700 px-3 py-1 rounded-full text-xs font-semibold border border-orange-100/30"
-          >
-            <Trophy className="w-4 h-4 text-orange-500" />
-            <span>{totalHours.toFixed(1)} hrs</span>
-          </div>
-
           {user ? (
             <div className="flex items-center">
               <button 

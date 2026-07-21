@@ -11,12 +11,19 @@ interface CourseCardProps {
   enrollment?: Enrollment;
   onSelect: (courseId: string) => void;
   onEnroll: (courseId: string) => void;
-  onShowCertificate?: (courseId: string) => void;
+  onUnenroll?: (courseId: string) => void;
+  enrollButtonLabel?: string;
 }
 
-export default function CourseCard({ course, enrollment, onSelect, onEnroll, onShowCertificate }: CourseCardProps) {
+export default function CourseCard({ 
+  course, 
+  enrollment, 
+  onSelect, 
+  onEnroll, 
+  onUnenroll,
+  enrollButtonLabel = 'See'
+}: CourseCardProps) {
   const isEnrolled = !!enrollment;
-  const isFinished = isEnrolled && enrollment.progress >= 100;
 
   return (
     <article 
@@ -47,29 +54,15 @@ export default function CourseCard({ course, enrollment, onSelect, onEnroll, onS
           {course.description}
         </p>
 
-        {/* Progress or Pricing Footer */}
+        {/* Pricing Footer */}
         <div className="pt-2 mt-auto border-t border-neutral-50">
           {isEnrolled ? (
-            <div className="flex items-center gap-2 w-full">
-              {isFinished && onShowCertificate && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onShowCertificate(course.id);
-                  }}
-                  className="px-3 py-2.5 rounded-xl border border-neutral-200 hover:bg-neutral-50 text-neutral-700 text-xs font-bold transition-colors shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <Award className="w-4 h-4 text-amber-500 shrink-0" />
-                  <span>Certificate</span>
-                </button>
-              )}
-              <button
-                onClick={() => onSelect(course.id)}
-                className="flex-1 px-4 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold transition-colors shadow-xs hover:shadow-md cursor-pointer text-center"
-              >
-                Learn
-              </button>
-            </div>
+            <button
+              onClick={() => onSelect(course.id)}
+              className="w-full px-4 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold transition-colors shadow-xs hover:shadow-md cursor-pointer text-center"
+            >
+              Learn
+            </button>
           ) : (
             <div className="flex items-center justify-between gap-3">
               <div className="flex flex-col">
@@ -79,7 +72,7 @@ export default function CourseCard({ course, enrollment, onSelect, onEnroll, onS
                 onClick={() => onEnroll(course.id)}
                 className="px-5 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold transition-colors shadow-xs hover:shadow-md cursor-pointer text-center"
               >
-                See
+                {enrollButtonLabel}
               </button>
             </div>
           )}

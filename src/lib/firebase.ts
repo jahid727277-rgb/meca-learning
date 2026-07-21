@@ -8,8 +8,9 @@ import {
   signInWithEmailAndPassword,
   updateProfile
 } from "firebase/auth";
-import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, getDoc } from "firebase/firestore";
-import { getDatabase, ref, set as rtdbSet, get as rtdbGet } from "firebase/database";
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, getDoc, collection, getDocs, deleteDoc } from "firebase/firestore";
+import { UserProgress } from "../types";
+import { COURSES } from "../data/courses";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyCw12hW5NlxuMt2av2i5C23Ky-YWg2_mis",
@@ -40,8 +41,6 @@ try {
 }
 export const db = firestoreDb;
 
-export const rtdb = getDatabase(app);
-
 // Authentication Helpers
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: "select_account" });
@@ -66,75 +65,79 @@ export async function logoutUser() {
 }
 
 // Data Synchronization Helpers
-export async function saveUserProgress(userId: string, progressData: any) {
+export async function saveUserProgress(userId: string, progressData: UserProgress) {
   try {
     if (!userId) return;
 
-    // Deep clean data for Firestore (remove undefined values which cause setDoc to fail)
-    const cleanData = JSON.parse(JSON.stringify(progressData));
+    // Only save the necessary enrollment data
+    const cleanData: UserProgress = {
+      enrolledCourses: progressData.enrolledCourses || {}
+    };
 
-    // Save to Firestore for structured records
-    const userDocRef = doc(db, "users", userId);
+    const currentUser = auth.currentUser;
+    // Determine the document ID in Firestore: Prefer Email, then Phone, then UID
+    let docId = userId;
+    if (currentUser && currentUser.uid === userId) {
+      docId = currentUser.email || currentUser.phoneNumber || userId;
+    }
+
+    // Save to Firestore
+    const userDocRef = doc(db, "users", docId);
     
-    // Save a clean array of enrolled courses with ID and Title for easy querying in console
-    const enrolledCourseDetails = cleanData.enrolledCourses 
-      ? Object.values(cleanData.enrolledCourses).map((enrollment: any) => ({
-          id: enrollment.courseId,
-          title: enrollment.courseTitle || enrollment.courseId
-        }))
-      : [];
-    
-    await setDoc(userDocRef, {
-      progress: cleanData,
-      enrolledCoursesList: enrolledCourseDetails,
+    // Include user details (email, phone, etc.) directly in the Firestore document
+    // This allows the admin to view each user's ID/email alongside their enrolled courses in Firestore console
+    const userData = {
+      uid: userId,
+      email: currentUser?.email || "",
+      displayName: currentUser?.displayName || "",
+      phoneNumber: currentUser?.phoneNumber || "",
+      enrolledCourses: cleanData.enrolledCourses,
       updatedAt: new Date().toISOString()
-    }, { merge: true });
+    };
 
-    // Also sync to Realtime Database
-    const rtdbRef = ref(rtdb, `users/${userId}/progress`);
-    await rtdbSet(rtdbRef, {
-      ...cleanData,
-      updatedAt: new Date().toISOString()
-    });
-
-    if (cleanData.enrolledCourses) {
-      const cleanCoursesRef = ref(rtdb, `users/${userId}/enrolled_courses`);
-      await rtdbSet(cleanCoursesRef, cleanData.enrolledCourses);
-    }
+    // Use setDoc WITHOUT merge: true to completely replace the document.
+    // This guarantees that any deleted courses are permanently removed from the user document in Firestore.
+    await setDoc(userDocRef, userData);
     
-    console.log(`Successfully synced progress to Firebase for user: ${userId}`, {
-      enrolledCount: Object.keys(cleanData.enrolledCourses || {}).length
-    });
-  } catch (error: any) {
-    if (error && error.message && error.message.includes("offline")) {
-      console.warn("Firebase client is offline. Progress will sync when online.");
-    } else {
-      console.error("Error saving user progress to Firebase:", error?.message || error);
-    }
-  }
-}
-
-export async function getUserProgress(userId: string) {
-  try {
-    // Try reading from Firestore first
-    const userDocRef = doc(db, "users", userId);
-    const docSnap = await getDoc(userDocRef);
-    if (docSnap.exists() && docSnap.data().progress) {
-      return docSnap.data().progress;
-    }
-
-    // Try reading from Realtime Database as fallback
-    const rtdbRef = ref(rtdb, `users/${userId}/progress`);
-    const rtdbSnap = await rtdbGet(rtdbRef);
-    if (rtdbSnap.exists()) {
-      return rtdbSnap.val();
-    }
+    console.log(`Successfully synced enrollment to Firestore for user: ${docId}`);
   } catch (error: any) {
     if (error && error.message && error.message.includes("offline")) {
       console.warn("Firebase client is offline.");
     } else {
-      console.warn("Error getting user progress from Firebase:", error?.message || error);
+      console.error("Error saving user enrollment to Firestore:", error?.message || error);
     }
+  }
+}
+
+export async function getUserProgress(userId: string): Promise<UserProgress | null> {
+  try {
+    const currentUser = auth.currentUser;
+    let docId = userId;
+    if (currentUser && currentUser.uid === userId) {
+      docId = currentUser.email || currentUser.phoneNumber || userId;
+    }
+
+    // Try reading from Firestore using the email/phone/UID as the document ID
+    const userDocRef = doc(db, "users", docId);
+    let docSnap = await getDoc(userDocRef);
+    
+    // Fallback: If not found under email/phone, try using the raw UID as document ID
+    if (!docSnap.exists() && docId !== userId) {
+      const fallbackRef = doc(db, "users", userId);
+      const fallbackSnap = await getDoc(fallbackRef);
+      if (fallbackSnap.exists()) {
+        docSnap = fallbackSnap;
+      }
+    }
+
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      if (data.enrolledCourses) {
+        return { enrolledCourses: data.enrolledCourses };
+      }
+    }
+  } catch (error: any) {
+    console.warn("Error getting user enrollment from Firestore:", error?.message || error);
   }
 
   return null;
@@ -160,76 +163,138 @@ export async function loginWithEmail(email: string, password: string) {
   }
 }
 
-// Courses Management Helpers in Realtime Database
+// Courses Management Helpers in Firestore
 export async function getCoursesFromDB() {
   try {
-    const coursesRef = ref(rtdb, "courses");
-    const snapshot = await rtdbGet(coursesRef);
-    if (snapshot.exists()) {
-      const data = snapshot.val();
-      // If saved as object, convert to array
-      if (data && typeof data === 'object') {
-        if (Array.isArray(data)) {
-          return data.filter(Boolean);
+    // Try reading from Firestore 'courses' collection first
+    const coursesCol = collection(db, "courses");
+    const snapshot = await getDocs(coursesCol);
+    if (!snapshot.empty) {
+      const courses: any[] = [];
+      snapshot.forEach((doc) => {
+        courses.push({ id: doc.id, ...doc.data() });
+      });
+      console.log("Successfully fetched courses from Firestore:", courses.length);
+      return courses;
+    } else {
+      // Seed with initial static courses
+      console.log("Firestore 'courses' collection is empty. Seeding with default courses...");
+      try {
+        for (const course of COURSES) {
+          if (!course.id) continue;
+          const courseDocRef = doc(db, "courses", course.id);
+          const cleanCourse = JSON.parse(JSON.stringify(course));
+          await setDoc(courseDocRef, cleanCourse);
         }
-        return Object.keys(data).map(key => ({
-          ...data[key],
-          id: data[key].id || key
-        }));
+        console.log("Seeded default courses to Firestore.");
+        return COURSES;
+      } catch (seedError: any) {
+        console.error("Failed to seed default courses to Firestore:", seedError);
+        return COURSES;
       }
     }
   } catch (error: any) {
-    if (error && error.message && error.message.includes("offline")) {
-      console.warn("Firebase client is offline. Unable to get courses from DB.");
-    } else {
-      console.warn("Error getting courses from Firebase:", error?.message || error);
-    }
+    console.warn("Error getting courses from Firestore:", error?.message || error);
+    // If we're offline or it fails, fall back to COURSES so the app still functions
+    return COURSES;
   }
-  return null;
 }
 
 export async function saveCoursesToDB(courses: any[]) {
+  // Save each course as a document in Firestore 'courses' collection
   try {
-    const coursesRef = ref(rtdb, "courses");
-    await rtdbSet(coursesRef, courses);
-  } catch (error: any) {
-    if (error && error.message && error.message.includes("offline")) {
-      console.warn("Firebase client is offline. Unable to save courses.");
-    } else {
-      console.warn("Error saving courses to Firebase:", error?.message || error);
+    for (const course of courses) {
+      if (!course.id) continue;
+      const courseDocRef = doc(db, "courses", course.id);
+      
+      // Deep clean data for Firestore (remove undefined values)
+      const cleanCourse = JSON.parse(JSON.stringify(course));
+      await setDoc(courseDocRef, cleanCourse, { merge: true });
     }
+    console.log("Successfully saved courses to Firestore.");
+  } catch (error: any) {
+    console.warn("Error saving courses to Firestore:", error?.message || error);
     throw error;
   }
 }
 
-// System image configurations stored in Realtime Database (logo, custom backgrounds, etc.)
+// System image configurations stored in Firestore (logo, custom backgrounds, etc.)
 export async function getImageConfigs() {
   try {
-    const imagesRef = ref(rtdb, "configs/images");
-    const snapshot = await rtdbGet(imagesRef);
-    if (snapshot.exists()) {
-      return snapshot.val();
+    const configDocRef = doc(db, "configs", "images");
+    const docSnap = await getDoc(configDocRef);
+    if (docSnap.exists()) {
+      return docSnap.data();
     }
   } catch (error: any) {
-    if (error && error.message && error.message.includes("offline")) {
-      console.warn("Firebase client is offline. Unable to get image configs.");
-    } else {
-      console.warn("Error reading image configs:", error?.message || error);
-    }
+    console.warn("Error reading image configs from Firestore:", error?.message || error);
   }
   return null;
 }
 
 export async function saveImageConfigs(configs: any) {
   try {
-    const imagesRef = ref(rtdb, "configs/images");
-    await rtdbSet(imagesRef, configs);
+    const configDocRef = doc(db, "configs", "images");
+    const cleanConfigs = JSON.parse(JSON.stringify(configs));
+    await setDoc(configDocRef, cleanConfigs);
+    console.log("Successfully saved image configs to Firestore.");
   } catch (error: any) {
-    if (error && error.message && error.message.includes("offline")) {
-      console.warn("Firebase client is offline. Unable to save image configs.");
-    } else {
-      console.warn("Error saving image configs:", error?.message || error);
+    console.warn("Error saving image configs to Firestore:", error?.message || error);
+    throw error;
+  }
+}
+
+export async function clearAllUserEnrollments() {
+  // Delete all user records from Firestore 'users' collection
+  try {
+    const usersCol = collection(db, "users");
+    const snapshot = await getDocs(usersCol);
+    for (const docSnapshot of snapshot.docs) {
+      await deleteDoc(doc(db, "users", docSnapshot.id));
     }
+    console.log("Successfully deleted all user progress records from Firestore 'users' collection.");
+  } catch (error: any) {
+    console.warn("Error deleting users from Firestore:", error?.message || error);
+  }
+}
+
+export async function cleanupUIDUsers() {
+  try {
+    const usersCol = collection(db, "users");
+    const snapshot = await getDocs(usersCol);
+    let count = 0;
+    for (const docSnapshot of snapshot.docs) {
+      const id = docSnapshot.id;
+      // If the ID is a UID (does not contain '@' and is not a phone number)
+      const isEmail = id.includes("@");
+      const isPhone = /^\+?[0-9\s\-()]+$/.test(id) && id.replace(/[^0-9]/g, "").length >= 10;
+      if (!isEmail && !isPhone) {
+        await deleteDoc(doc(db, "users", id));
+        count++;
+      }
+    }
+    if (count > 0) {
+      console.log(`Successfully deleted ${count} UID-style user records from Firestore.`);
+    }
+  } catch (error: any) {
+    console.warn("Error cleaning up UID users from Firestore:", error?.message || error);
+  }
+}
+
+export async function syncAllCoursesToFirestore(courses: any[]) {
+  try {
+    for (const course of courses) {
+      if (!course.id) continue;
+      const courseDocRef = doc(db, "courses", course.id);
+      
+      // Deep clean data for Firestore (remove undefined values)
+      const cleanCourse = JSON.parse(JSON.stringify(course));
+      await setDoc(courseDocRef, cleanCourse, { merge: true });
+    }
+    console.log("Successfully synced all courses to Firestore.");
+    return true;
+  } catch (error: any) {
+    console.error("Error syncing courses to Firestore:", error);
     throw error;
   }
 }
