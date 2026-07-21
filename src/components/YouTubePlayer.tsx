@@ -28,11 +28,16 @@ export default function YouTubePlayer({ videoUrl }: YouTubePlayerProps) {
     setPlayState('idle');
   }, [videoUrl]);
 
-  if (!videoId && !isDirect) {
+  if (!videoUrl || (!videoId && !isDirect)) {
     return (
-      <div className="w-full aspect-video bg-neutral-900 flex flex-col items-center justify-center p-6 text-center space-y-3">
-        <Loader2 className="w-10 h-10 text-neutral-700 animate-pulse" />
-        <p className="text-neutral-500 text-xs font-medium">Video URL structure not recognized</p>
+      <div className="w-full aspect-video bg-neutral-100 dark:bg-neutral-900 animate-pulse flex flex-col items-center justify-center p-6 text-center space-y-4 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-inner">
+        <div className="w-16 h-16 rounded-full bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 text-neutral-400 dark:text-neutral-600 animate-spin" />
+        </div>
+        <div className="space-y-2 w-3/4 max-w-xs">
+          <div className="h-4 bg-neutral-200 dark:bg-neutral-800 rounded w-full" />
+          <div className="h-3 bg-neutral-200 dark:bg-neutral-800 rounded w-2/3 mx-auto" />
+        </div>
       </div>
     );
   }
