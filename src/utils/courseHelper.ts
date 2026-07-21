@@ -108,7 +108,10 @@ export function normalizeCourse(c: any): Course {
       return c.thumbnail;
     })(),
     tags: tags,
-    syllabus
+    syllabus,
+    comingSoonMessage: c.comingSoonMessage || '',
+    promoVideoUrl: c.promoVideoUrl || '',
+    detailsDescription: c.detailsDescription || ''
   };
 }
 

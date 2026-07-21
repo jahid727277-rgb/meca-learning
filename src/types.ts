@@ -49,6 +49,7 @@ export interface Course {
   syllabus: SyllabusSection[];
   promoVideoUrl?: string;
   detailsDescription?: string;
+  comingSoonMessage?: string;
 }
 
 export interface Enrollment {

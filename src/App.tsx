@@ -30,9 +30,11 @@ import {
   getImageConfigs,
   saveImageConfigs,
   clearAllUserEnrollments,
-  cleanupUIDUsers
+  cleanupUIDUsers,
+  db
 } from './lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { onSnapshot, doc, getDoc, collection } from 'firebase/firestore';
 import { AnimatePresence, motion } from 'framer-motion';
 import AuthModal from './components/AuthModal';
 import Footer, { footerContent } from './components/Footer';
@@ -83,6 +85,7 @@ export default function App() {
   const [coursesLoading, setCoursesLoading] = useState<boolean>(true);
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
   const [pendingEnrollCourseId, setPendingEnrollCourseId] = useState<string | null>(null);
+  const [enrollPopupMessage, setEnrollPopupMessage] = useState<string | null>(null);
 
   // Navigation: 'explore' | 'my-learning' | 'dashboard' | 'classroom' | 'admin'
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -108,12 +111,15 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [location.pathname]);
 
-  // Listen to Auth changes and load progress from Firebase
+  // Listen to Auth changes and load progress from Firebase with secure state initialization
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setAuthLoading(false);
       
       if (currentUser) {
+        // Check if user was already cached in localStorage before updating it
+        const wasAlreadyLoggedIn = !!localStorage.getItem('meca_cached_user');
+
         // User logged in
         const simpleUser = {
           uid: currentUser.uid,
@@ -130,6 +136,7 @@ export default function App() {
           cleanupUIDUsers().catch(err => console.warn("Failed to auto-cleanup UID users:", err));
         }
 
+        // Fetch user progress/enrolled courses securely
         try {
           setIsCloudProgressLoaded(false);
           const cloudProgress = await getUserProgress(currentUser.uid);
@@ -141,7 +148,6 @@ export default function App() {
           } else {
             // New user with no cloud progress - save their current local session if it exists
             // Only do this if they were NOT already logged in before (meaning this is a fresh first-time login, not a page refresh)
-            const wasAlreadyLoggedIn = !!localStorage.getItem('meca_cached_user');
             if (!wasAlreadyLoggedIn && Object.keys(progress.enrolledCourses).length > 0) {
               await saveUserProgress(currentUser.uid, progress);
             } else {
@@ -166,37 +172,43 @@ export default function App() {
         } catch (e) {}
       }
     });
-    return () => unsubscribe();
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
-  // Fetch dynamic courses and logos/image configurations from Realtime Database on component mount
+  // Fetch dynamic courses in real-time on website visit and listen for live changes
   useEffect(() => {
-    async function fetchFirebaseConfigurations() {
+    // 1. Get branding configurations
+    getImageConfigs().then((configs) => {
+      setLogoUrl(mecaLearningLogo);
+    }).catch(err => console.warn("Branding configs load error:", err));
+
+    // 2. Subscribe to real-time changes in Firestore 'courses' collection
+    setCoursesLoading(true);
+    const coursesCol = collection(db, "courses");
+    const unsubscribeCourses = onSnapshot(coursesCol, async (snapshot) => {
       try {
-        // 1. Get branding configurations
-        const configs = await getImageConfigs();
-        setLogoUrl(mecaLearningLogo);
-        if (configs && configs.logoUrl) {
-          // Keep other configs if needed, but not logoUrl
-        }
-
-        // 2. Get and clean AI courses
-        const dbCourses = await getCoursesFromDB();
-
-        if (!dbCourses || dbCourses.length === 0) {
-          // If RTDB is empty, seed it with the default AI courses
+        if (snapshot.empty) {
+          // If Firestore is empty, seed it with the default courses
+          console.log("Firestore courses empty. Seeding defaults...");
           await saveCoursesToDB(COURSES);
           setCourses(COURSES);
         } else {
-          // Normalize every course fetched from Realtime Database to ensure all arrays/properties are safe and correct.
-          // This prevents courses from being filtered out due to Firebase array-to-object key/value serialization.
+          const dbCourses: any[] = [];
+          snapshot.forEach((doc) => {
+            dbCourses.push({ id: doc.id, ...doc.data() });
+          });
+
+          // Normalize every course fetched to prevent Firestore array-to-object serialization issues
           const normalizedDBCourses = dbCourses
             .filter((c: any) => c && (c.id || c.title))
             .map((c: any) => {
               try {
                 return normalizeCourse(c);
               } catch (e) {
-                console.error("Error normalizing course from Realtime Database:", e);
+                console.error("Error normalizing course from Firestore:", e);
                 return null;
               }
             })
@@ -235,18 +247,18 @@ export default function App() {
           }
         }
       } catch (err: any) {
-        if (err && err.message && err.message.includes("offline")) {
-          console.warn("Firebase is offline. Loading offline configurations and defaults.");
-        } else {
-          console.warn("Error loading courses/configs from Firebase Realtime Database:", err?.message || err);
-        }
-        // Fallback to static courses array if Firestore or RTDB is blocked
+        console.error("Error processing real-time courses updates:", err);
         setCourses(COURSES);
       } finally {
         setCoursesLoading(false);
       }
-    }
-    fetchFirebaseConfigurations();
+    }, (error) => {
+      console.warn("Firestore real-time courses listener failed:", error);
+      setCourses(COURSES);
+      setCoursesLoading(false);
+    });
+
+    return () => unsubscribeCourses();
   }, []);
 
   // Process pending enrollments after login
@@ -295,6 +307,23 @@ export default function App() {
   // Actions
   const handleEnroll = (courseId: string, currentUser = user) => {
     console.log("DEBUG: handleEnroll called for:", courseId);
+    const course = courses.find((c) => c.id === courseId);
+    if (!course) {
+        console.log("DEBUG: Course not found:", courseId);
+        return;
+    }
+
+    // Intercept Date or UPcoming courses (where price is non-numeric and not free)
+    const pStr = String(course.price).trim().toLowerCase();
+    const isFree = pStr.includes('free') || pStr === '0' || course.price === 0;
+    const isNum = !isNaN(Number(pStr)) && pStr !== '';
+    const isComingSoon = !isFree && !isNum;
+    if (isComingSoon) {
+      const msg = course.comingSoonMessage || "এই কোর্সটি খুব শীঘ্রই শুরু হবে!";
+      setEnrollPopupMessage(msg);
+      return;
+    }
+
     if (!currentUser) {
       setPendingEnrollCourseId(courseId);
       setShowAuthModal(true);
@@ -304,12 +333,6 @@ export default function App() {
     console.log("DEBUG: Current enrolledCourses:", progress.enrolledCourses);
     if (progress.enrolledCourses[courseId]) {
         console.log("DEBUG: Already enrolled, returning.");
-        return;
-    }
-
-    const course = courses.find((c) => c.id === courseId);
-    if (!course) {
-        console.log("DEBUG: Course not found:", courseId);
         return;
     }
 
@@ -348,13 +371,31 @@ export default function App() {
   };
 
   const handleEnrollAndStart = (courseId: string) => {
+    const course = courses.find((c) => c.id === courseId);
+    if (course) {
+      const pStr = String(course.price).trim().toLowerCase();
+      const isFree = pStr.includes('free') || pStr === '0' || course.price === 0;
+      const isNum = !isNaN(Number(pStr)) && pStr !== '';
+      const isComingSoon = !isFree && !isNum;
+      if (isComingSoon) {
+        const msg = course.comingSoonMessage || "এই কোর্সটি খুব শীঘ্রই শুরু হবে!";
+        setEnrollPopupMessage(msg);
+        return;
+      }
+    }
+
     if (!user) {
       setPendingEnrollCourseId(courseId);
       setShowAuthModal(true);
       return;
     }
-    handleEnroll(courseId, user);
-    navigate('/my-learning');
+
+    if (progress.enrolledCourses?.[courseId]) {
+      navigate(`/classroom/${courseId}`);
+    } else {
+      handleEnroll(courseId, user);
+      navigate('/my-learning');
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -399,7 +440,6 @@ export default function App() {
       {/* 2. DYNAMIC CONTENT MAIN ROUTING */}
       <main className="flex-grow">
         <AnimatePresence mode="wait">
-          {/* @ts-expect-error React 19 types issue with Routes key */}
           <Routes location={location} key={location.pathname}>
             <Route path="/course/:courseId" element={
               <PageTransition>
@@ -531,6 +571,29 @@ export default function App() {
                 logoUrl={logoUrl}
                 onUpdateCourses={async (newCourses) => {
                   console.log("App.tsx onUpdateCourses called with:", newCourses.length, "courses");
+                  
+                  // Clean up deleted courses from local progress state if the user was enrolled in any of them
+                  const deletedIds = courses
+                    .filter(oldC => oldC && !newCourses.some(newC => newC && newC.id === oldC.id))
+                    .map(oldC => oldC.id);
+
+                  if (deletedIds.length > 0) {
+                    setProgress(prev => {
+                      const updatedEnrolled = { ...prev.enrolledCourses };
+                      let changed = false;
+                      for (const id of deletedIds) {
+                        if (updatedEnrolled[id]) {
+                          delete updatedEnrolled[id];
+                          changed = true;
+                        }
+                      }
+                      if (changed) {
+                        return { ...prev, enrolledCourses: updatedEnrolled };
+                      }
+                      return prev;
+                    });
+                  }
+
                   setCourses(newCourses);
                   try {
                     await saveCoursesToDB(newCourses);
@@ -687,6 +750,33 @@ export default function App() {
             setUser(loggedUser);
           }}
         />
+      )}
+
+      {/* UPCOMING COURSE CUSTOM POPUP MESSAGE MODAL */}
+      {enrollPopupMessage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn text-neutral-800">
+          <div className="bg-white rounded-3xl border border-neutral-100 shadow-2xl max-w-md w-full overflow-hidden text-center p-6 space-y-5">
+            <div className="mx-auto w-12 h-12 bg-sky-50 text-sky-600 rounded-full flex items-center justify-center shrink-0">
+              <Sparkles className="w-6 h-6 animate-pulse" />
+            </div>
+            
+            <div className="space-y-2">
+              <h3 className="text-lg font-black text-neutral-900">কোর্সের তথ্য</h3>
+              <p className="text-sm text-neutral-600 font-medium leading-relaxed whitespace-pre-wrap">
+                {enrollPopupMessage}
+              </p>
+            </div>
+
+            <div className="pt-2">
+              <button
+                onClick={() => setEnrollPopupMessage(null)}
+                className="w-full py-3 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-black rounded-xl transition-all shadow-md cursor-pointer uppercase tracking-wider"
+              >
+                ঠিক আছে, বুঝেছি
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

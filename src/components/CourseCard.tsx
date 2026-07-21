@@ -59,18 +59,20 @@ export default function CourseCard({
           {isEnrolled ? (
             <button
               onClick={() => onSelect(course.id)}
-              className="w-full px-4 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold transition-colors shadow-xs hover:shadow-md cursor-pointer text-center"
+              className="w-full px-4 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold transition-colors shadow-xs hover:shadow-md cursor-pointer text-center whitespace-nowrap"
             >
               Learn
             </button>
           ) : (
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex flex-col">
-                <span className="text-lg font-black text-neutral-900">{formatBDTPrice(course.price)}</span>
+            <div className="flex items-center justify-between gap-3 flex-nowrap w-full overflow-hidden">
+              <div className="flex flex-col min-w-0 flex-shrink">
+                <span className="text-lg font-black text-neutral-900 whitespace-nowrap truncate block" title={formatBDTPrice(course.price)}>
+                  {formatBDTPrice(course.price)}
+                </span>
               </div>
               <button
                 onClick={() => onEnroll(course.id)}
-                className="px-5 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold transition-colors shadow-xs hover:shadow-md cursor-pointer text-center"
+                className="px-5 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold transition-colors shadow-xs hover:shadow-md cursor-pointer text-center whitespace-nowrap flex-shrink-0"
               >
                 {enrollButtonLabel}
               </button>

@@ -26,8 +26,13 @@ export default function CourseDetailsView({ course, onBack, onEnroll, isEnrolled
     }));
   };
 
-  // The user requested to play this specific youtube link for the intro video: https://youtu.be/v1gT1hxdrWU
-  const promoVideoUrl = course.promoVideoUrl || 'https://youtu.be/v1gT1hxdrWU';
+  // Default promo video URL for new courses
+  const promoVideoUrl = course.promoVideoUrl || 'https://youtu.be/example.video';
+
+  const pStr = String(course.price).trim().toLowerCase();
+  const isFree = pStr.includes('free') || pStr === '0' || course.price === 0;
+  const isNum = !isNaN(Number(pStr)) && pStr !== '';
+  const isComingSoon = !isFree && !isNum;
 
   return (
     <div className="min-h-screen bg-neutral-50">
@@ -55,7 +60,7 @@ export default function CourseDetailsView({ course, onBack, onEnroll, isEnrolled
             enrollment={isEnrolled ? { courseId: course.id, enrolledAt: new Date().toISOString() } : undefined}
             onSelect={() => onEnroll(course.id)}
             onEnroll={() => onEnroll(course.id)}
-            enrollButtonLabel="এনরোল করুন"
+            enrollButtonLabel="Enroll now"
           />
         </div>
 
@@ -74,32 +79,21 @@ export default function CourseDetailsView({ course, onBack, onEnroll, isEnrolled
 
       {/* 6. BOTTOM ENROLLMENT DOCK */}
       <div className="fixed bottom-0 left-0 right-0 z-40 w-full bg-neutral-800/95 backdrop-blur-md text-white border-t border-neutral-700 shadow-[0_-8px_30px_rgb(0,0,0,0.12)] rounded-t-[32px] sm:rounded-t-[40px] px-6 py-5 sm:py-6">
-        <div className="max-w-2xl mx-auto flex items-center justify-between gap-6">
+        <div className="max-w-2xl mx-auto flex flex-row items-center justify-between gap-4 sm:gap-6 flex-nowrap w-full overflow-hidden">
           {/* Price Container */}
-          <div className="flex flex-col pl-2">
-            <span className="text-[10px] font-black uppercase tracking-wider text-neutral-300">কোর্সের মূল্য</span>
-            <span className="text-xl sm:text-2xl font-black text-white mt-0.5">
+          <div className="flex flex-col pl-2 min-w-0 flex-shrink">
+            <span className="text-lg sm:text-xl md:text-2xl font-black text-white whitespace-nowrap truncate block" title={formatBDTPrice(course.price)}>
               {formatBDTPrice(course.price)}
             </span>
           </div>
 
           {/* Enroll / Start Studying Button */}
-          {isEnrolled ? (
-            <button
-              onClick={() => onEnroll(course.id)}
-              className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white text-sm font-black rounded-xl transition-all shadow-md cursor-pointer flex items-center gap-2"
-            >
-              <Check className="w-4 h-4" />
-              <span>আমার কোর্সে যান</span>
-            </button>
-          ) : (
-            <button
-              onClick={() => onEnroll(course.id)}
-              className="px-8 py-3 bg-[#dcdcdc] text-neutral-900 hover:bg-white active:scale-[0.98] text-sm font-black rounded-xl transition-all shadow-md cursor-pointer"
-            >
-              এনরোল করুন
-            </button>
-          )}
+          <button
+            onClick={() => onEnroll(course.id)}
+            className="px-6 sm:px-8 py-3 bg-[#dcdcdc] text-neutral-900 hover:bg-white active:scale-[0.98] text-xs sm:text-sm font-black rounded-xl transition-all shadow-md cursor-pointer whitespace-nowrap flex-shrink-0"
+          >
+            Enroll now
+          </button>
         </div>
       </div>
     </div>

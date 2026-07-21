@@ -95,7 +95,9 @@ export default function AdminPanel({
   const [formDescription, setFormDescription] = useState('');
   const [formCategory, setFormCategory] = useState('Prompt Engineering');
   const [formLevel, setFormLevel] = useState<Level>('Beginner');
-  const [formPrice, setFormPrice] = useState<string | number>(49.99);
+  const [formPrice, setFormPrice] = useState<string | number>('');
+  const [formPricingType, setFormPricingType] = useState<'free' | 'paid' | 'coming_soon'>('paid');
+  const [formComingSoonMessage, setFormComingSoonMessage] = useState('');
   const [formThumbnail, setFormThumbnail] = useState('');
   const [formInstructorName, setFormInstructorName] = useState('Dr. Sarah Jenkins');
   const [formInstructorRole, setFormInstructorRole] = useState('Associate Professor');
@@ -269,8 +271,22 @@ export const COURSES: Course[] = ${formattedCourses};
     setFormDescription(course.description);
     setFormCategory(course.category);
     setFormLevel(course.level);
-    setFormPrice(course.price);
+    
+    // Set pricing type based on price value
+    const originalPrice = course.price;
+    setFormPrice(originalPrice);
+    const pStr = String(originalPrice).trim().toLowerCase();
+    const isNum = !isNaN(Number(pStr)) && pStr !== '';
+    if (pStr.includes('free') || pStr === '0' || originalPrice === 0) {
+      setFormPricingType('free');
+    } else if (isNum) {
+      setFormPricingType('paid');
+    } else {
+      setFormPricingType('coming_soon');
+    }
+
     setFormThumbnail(course.thumbnail);
+    setFormComingSoonMessage(course.comingSoonMessage || '');
     setFormInstructorName(course.instructor?.name || '');
     setFormInstructorRole(course.instructor?.role || '');
     setFormInstructorAvatar(course.instructor?.avatar || '');
@@ -315,15 +331,17 @@ export const COURSES: Course[] = ${formattedCourses};
     setIsAddingNew(true);
     setFormTitle('');
     setFormDescription('');
-    setFormCategory('Prompt Engineering');
+    setFormCategory('');
     setFormLevel('Beginner');
     setFormPrice('');
+    setFormPricingType('paid');
+    setFormComingSoonMessage('');
     setFormThumbnail('');
-    setFormInstructorName('Abrar Chowdhury');
-    setFormInstructorRole('AI Research Architect');
-    setFormInstructorAvatar('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200');
-    setFormInstructorBio('Expert in artificial intelligence.');
-    setFormTags('AI, LLMs');
+    setFormInstructorName('');
+    setFormInstructorRole('');
+    setFormInstructorAvatar('');
+    setFormInstructorBio('');
+    setFormTags('');
     setFormSyllabus([
       {
         id: 'sec-1',
@@ -333,7 +351,7 @@ export const COURSES: Course[] = ${formattedCourses};
             id: 'les-1',
             title: 'Welcome & System Overview',
             type: 'video',
-            videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            videoUrl: 'https://www.youtube.com/example',
             content: ''
           }
         ]
@@ -347,29 +365,30 @@ export const COURSES: Course[] = ${formattedCourses};
       return;
     }
 
-    const processedTags = formTags.split(',').map(t => t.trim()).filter(Boolean);
+    const processedTags = formTags.trim() ? formTags.split(',').map(t => t.trim()).filter(Boolean) : [];
     const totalLessons = formSyllabus.reduce((acc, sec) => acc + sec.lessons.length, 0);
 
     const updatedOrNewCourse: Course = {
       id: editingCourse ? editingCourse.id : `course-${Date.now()}`,
       title: formTitle,
       description: formDescription,
-      category: formCategory,
+      category: formCategory.trim() ? formCategory : '',
       level: formLevel,
       price: formPrice,
       thumbnail: formThumbnail,
       rating: editingCourse ? editingCourse.rating : 5.0,
       reviewCount: editingCourse ? editingCourse.reviewCount : 1,
-      duration: '10h 30m',
+      duration: '',
       lessonsCount: totalLessons,
       tags: processedTags,
       instructor: {
-        name: formInstructorName,
-        role: formInstructorRole,
-        avatar: formInstructorAvatar,
-        bio: formInstructorBio
+        name: formInstructorName.trim() ? formInstructorName : '',
+        role: formInstructorRole.trim() ? formInstructorRole : '',
+        avatar: formInstructorAvatar.trim() ? formInstructorAvatar : '',
+        bio: formInstructorBio.trim() ? formInstructorBio : ''
       },
-      syllabus: formSyllabus
+      syllabus: formSyllabus,
+      comingSoonMessage: formComingSoonMessage
     };
 
     let updatedCoursesList: Course[] = [];
@@ -473,7 +492,7 @@ export const COURSES: Course[] = ${formattedCourses};
         id: `les-${Date.now()}`,
         title: 'New Lesson',
         type: 'video',
-        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        videoUrl: 'https://www.youtube.com/example',
         content: ''
       };
       const section = { ...copy[secIndex] };
@@ -592,9 +611,9 @@ export const COURSES: Course[] = ${formattedCourses};
     if (newIndex >= 0 && newIndex < lessons.length && newIndex !== lesIndex) {
       const [movedItem] = lessons.splice(lesIndex, 1);
       lessons.splice(newIndex, 0, movedItem);
-      sectionCopy.lessons = lessons;
-      updatedSyllabus[secIndex] = sectionCopy;
     }
+    sectionCopy.lessons = lessons;
+    updatedSyllabus[secIndex] = sectionCopy;
 
     setFormSyllabus(updatedSyllabus);
     setEditingLessonId(null);
@@ -788,13 +807,116 @@ export const COURSES: Course[] = ${formattedCourses};
               className="w-full px-4 py-3 bg-neutral-50 border border-neutral-300 text-neutral-800 text-xs font-medium rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20"
               placeholder="Description..."
             />
-            <input
-              type="text"
-              value={formPrice}
-              onChange={(e) => setFormPrice(e.target.value)}
-              className="w-full px-4 py-3 bg-neutral-50 border border-neutral-300 text-neutral-800 text-xs font-medium rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20"
-              placeholder="Price box"
-            />
+            {/* 3-Segmented Pricing Method Selector */}
+            <div className="space-y-3 bg-neutral-50/50 p-4 rounded-2xl border border-neutral-200/60">
+              <label className="block text-xs font-black text-neutral-600 tracking-wider uppercase">
+                Course Pricing Options
+              </label>
+              
+              <div className="grid grid-cols-3 gap-2 bg-neutral-100 p-1 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormPricingType('free');
+                    setFormPrice('Free');
+                  }}
+                  className={`py-2.5 text-xs font-black rounded-lg transition-all cursor-pointer ${
+                    formPricingType === 'free'
+                      ? 'bg-white text-emerald-700 shadow-sm border border-neutral-200'
+                      : 'text-neutral-500 hover:text-neutral-800'
+                  }`}
+                >
+                  Free
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormPricingType('paid');
+                    setFormPrice('');
+                  }}
+                  className={`py-2.5 text-xs font-black rounded-lg transition-all cursor-pointer ${
+                    formPricingType === 'paid'
+                      ? 'bg-white text-amber-700 shadow-sm border border-neutral-200'
+                      : 'text-neutral-500 hover:text-neutral-800'
+                  }`}
+                >
+                  Paid
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormPricingType('coming_soon');
+                    setFormPrice('');
+                    setFormComingSoonMessage('');
+                  }}
+                  className={`py-2.5 text-xs font-black rounded-lg transition-all cursor-pointer ${
+                    formPricingType === 'coming_soon'
+                      ? 'bg-white text-sky-700 shadow-sm border border-neutral-200'
+                      : 'text-neutral-500 hover:text-neutral-800'
+                  }`}
+                >
+                  Date or UPcoming
+                </button>
+              </div>
+
+              {formPricingType === 'paid' && (
+                <div className="space-y-3 animate-fadeIn">
+                  <div>
+                    <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1">
+                      Set Course Price
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={formPrice}
+                        onChange={(e) => setFormPrice(e.target.value)}
+                        onFocus={(e) => { e.target.placeholder = ''; }}
+                        onBlur={(e) => { e.target.placeholder = 'Price'; }}
+                        className="w-full px-4 py-3 bg-white border border-neutral-300 text-neutral-800 text-xs font-black rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all"
+                        placeholder="Price"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {formPricingType === 'coming_soon' && (
+                <div className="space-y-3 animate-fadeIn">
+                  <div>
+                    <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1">
+                      Set Status Text / Date
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={formPrice}
+                        onChange={(e) => setFormPrice(e.target.value)}
+                        onFocus={(e) => { e.target.placeholder = ''; }}
+                        onBlur={(e) => { e.target.placeholder = 'Text / Date'; }}
+                        className="w-full px-4 py-3 bg-white border border-neutral-300 text-neutral-800 text-xs font-black rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition-all"
+                        placeholder="Text / Date"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1">
+                      message
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={formComingSoonMessage}
+                        onChange={(e) => setFormComingSoonMessage(e.target.value)}
+                        onFocus={(e) => { e.target.placeholder = ''; }}
+                        onBlur={(e) => { e.target.placeholder = 'Message'; }}
+                        className="w-full px-4 py-3 bg-white border border-neutral-300 text-neutral-800 text-xs font-black rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition-all"
+                        placeholder="Message"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
             
             
             <button
