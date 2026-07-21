@@ -1,6 +1,6 @@
 import React from 'react';
 
-const mecaLearningLogo = './logo_web.png';
+const mecaLearningLogo = '/logo_web.png';
 
 interface LogoProps {
   className?: string;
