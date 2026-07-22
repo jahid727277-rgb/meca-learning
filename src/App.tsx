@@ -440,7 +440,8 @@ export default function App() {
       {/* 2. DYNAMIC CONTENT MAIN ROUTING */}
       <main className="flex-grow">
         <AnimatePresence mode="wait">
-          <Routes location={location} key={location.pathname}>
+          <div key={location.pathname}>
+            <Routes location={location}>
             <Route path="/course/:courseId" element={
               <PageTransition>
                 <CourseDetailsRouteWrapper
@@ -645,7 +646,8 @@ export default function App() {
             </PageTransition>
           } />
         </Routes>
-      </AnimatePresence>
+          </div>
+        </AnimatePresence>
     </main>
 
       {/* 3. PROFESSIONAL SUB-FOOTER */}
