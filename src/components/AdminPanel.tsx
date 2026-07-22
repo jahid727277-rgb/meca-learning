@@ -273,16 +273,15 @@ export const COURSES: Course[] = ${formattedCourses};
     setFormLevel(course.level);
     
     // Set pricing type based on price value
-    const originalPrice = course.price;
+    const originalPrice = course.price !== undefined && course.price !== null ? course.price : '';
     setFormPrice(originalPrice);
     const pStr = String(originalPrice).trim().toLowerCase();
-    const isNum = !isNaN(Number(pStr)) && pStr !== '';
     if (pStr.includes('free') || pStr === '0' || originalPrice === 0) {
       setFormPricingType('free');
-    } else if (isNum) {
-      setFormPricingType('paid');
-    } else {
+    } else if (pStr.includes('coming') || pStr.includes('soon') || pStr.includes('upcoming')) {
       setFormPricingType('coming_soon');
+    } else {
+      setFormPricingType('paid');
     }
 
     setFormThumbnail(course.thumbnail);
@@ -368,17 +367,30 @@ export const COURSES: Course[] = ${formattedCourses};
     const processedTags = formTags.trim() ? formTags.split(',').map(t => t.trim()).filter(Boolean) : [];
     const totalLessons = formSyllabus.reduce((acc, sec) => acc + sec.lessons.length, 0);
 
+    let finalPrice: string | number = formPrice;
+    if (formPricingType === 'free') {
+      finalPrice = 'Free';
+    } else if (formPricingType === 'coming_soon') {
+      finalPrice = formPrice && String(formPrice).trim() ? formPrice : 'Coming Soon';
+    } else if (formPricingType === 'paid') {
+      if (!formPrice || String(formPrice).trim() === '') {
+        finalPrice = '৳2,500';
+      } else {
+        finalPrice = formPrice;
+      }
+    }
+
     const updatedOrNewCourse: Course = {
       id: editingCourse ? editingCourse.id : `course-${Date.now()}`,
       title: formTitle,
       description: formDescription,
       category: formCategory.trim() ? formCategory : '',
       level: formLevel,
-      price: formPrice,
+      price: finalPrice,
       thumbnail: formThumbnail,
       rating: editingCourse ? editingCourse.rating : 5.0,
       reviewCount: editingCourse ? editingCourse.reviewCount : 1,
-      duration: '',
+      duration: editingCourse?.duration || '10h 30m',
       lessonsCount: totalLessons,
       tags: processedTags,
       instructor: {
@@ -388,7 +400,9 @@ export const COURSES: Course[] = ${formattedCourses};
         bio: formInstructorBio.trim() ? formInstructorBio : ''
       },
       syllabus: formSyllabus,
-      comingSoonMessage: formComingSoonMessage
+      comingSoonMessage: formComingSoonMessage,
+      promoVideoUrl: editingCourse?.promoVideoUrl,
+      detailsDescription: editingCourse?.detailsDescription
     };
 
     let updatedCoursesList: Course[] = [];
@@ -836,7 +850,10 @@ export const COURSES: Course[] = ${formattedCourses};
                   type="button"
                   onClick={() => {
                     setFormPricingType('paid');
-                    setFormPrice('');
+                    const pStr = String(formPrice).trim().toLowerCase();
+                    if (!formPrice || pStr.includes('free') || pStr.includes('coming') || pStr.includes('soon')) {
+                      setFormPrice('৳2,500');
+                    }
                   }}
                   className={`py-2.5 text-xs font-black rounded-lg transition-all cursor-pointer ${
                     formPricingType === 'paid'
@@ -850,8 +867,10 @@ export const COURSES: Course[] = ${formattedCourses};
                   type="button"
                   onClick={() => {
                     setFormPricingType('coming_soon');
-                    setFormPrice('');
-                    setFormComingSoonMessage('');
+                    const pStr = String(formPrice).trim().toLowerCase();
+                    if (!formPrice || pStr.includes('free') || !isNaN(Number(pStr)) || pStr.includes('৳')) {
+                      setFormPrice('Coming Soon');
+                    }
                   }}
                   className={`py-2.5 text-xs font-black rounded-lg transition-all cursor-pointer ${
                     formPricingType === 'coming_soon'
