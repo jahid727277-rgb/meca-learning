@@ -79,10 +79,10 @@ export default function App() {
   const [copiedDomain, setCopiedDomain] = useState<string | null>(null);
   const [isCloudProgressLoaded, setIsCloudProgressLoaded] = useState<boolean>(false);
 
-  // Dynamic courses and branding configurations loaded from Hybrid (Static + Firestore) Database
-  const [courses, setCourses] = useState<Course[]>(COURSES);
+  // Dynamic courses and branding configurations loaded from Firebase Realtime Database
+  const [courses, setCourses] = useState<Course[]>([]);
   const [logoUrl, setLogoUrl] = useState<string>(mecaLearningLogo);
-  const [coursesLoading, setCoursesLoading] = useState<boolean>(false);
+  const [coursesLoading, setCoursesLoading] = useState<boolean>(true);
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
   const [pendingEnrollCourseId, setPendingEnrollCourseId] = useState<string | null>(null);
   const [enrollPopupMessage, setEnrollPopupMessage] = useState<string | null>(null);
@@ -186,16 +186,43 @@ export default function App() {
     }).catch(err => console.warn("Branding configs load error:", err));
 
     // 2. Subscribe to real-time changes in Firestore 'courses' collection
+    setCoursesLoading(true);
     const coursesCol = collection(db, "courses");
     const unsubscribeCourses = onSnapshot(coursesCol, async (snapshot) => {
       try {
-        if (!snapshot.empty) {
+        if (snapshot.empty) {
+          // Check if DB was initialized previously
+          let wasInitialized = false;
+          try {
+            const metaSnap = await getDoc(doc(db, "configs", "courses_meta"));
+            if (metaSnap.exists() && metaSnap.data()?.initialized) {
+              wasInitialized = true;
+            }
+          } catch (mErr) {
+            console.warn("Error reading courses_meta config:", mErr);
+          }
+
+          if (!wasInitialized) {
+            console.log("Firestore courses empty for the first time. Seeding default courses...");
+            await saveCoursesToDB(COURSES);
+            setCourses(COURSES);
+          } else {
+            console.log("Firestore courses collection is empty (all courses deleted).");
+            setCourses([]);
+          }
+        } else {
+          // Mark as initialized if not already marked
+          try {
+            const metaRef = doc(db, "configs", "courses_meta");
+            setDoc(metaRef, { initialized: true }, { merge: true }).catch(() => {});
+          } catch (_) {}
+
           const dbCourses: any[] = [];
           snapshot.forEach((docSnap) => {
             dbCourses.push({ id: docSnap.id, ...docSnap.data() });
           });
 
-          // Normalize every course fetched from Firestore
+          // Normalize every course fetched to prevent Firestore array-to-object serialization issues
           const normalizedDBCourses = dbCourses
             .filter((c: any) => c && (c.id || c.title))
             .map((c: any) => {
@@ -208,19 +235,21 @@ export default function App() {
             })
             .filter(Boolean) as Course[];
 
-          setCourses(normalizedDBCourses);
-        } else {
-          // If collection is empty, check if initialized
-          try {
-            const metaSnap = await getDoc(doc(db, "configs", "courses_meta"));
-            if (metaSnap.exists() && metaSnap.data()?.initialized) {
-              setCourses([]);
-            } else {
-              await saveCoursesToDB(COURSES);
-              setCourses(COURSES);
+          // Detect if any normalized course had its thumbnail corrected/updated relative to the DB course
+          let hasThumbnailCorrection = false;
+          normalizedDBCourses.forEach((normalized) => {
+            const original = dbCourses.find((dbC: any) => dbC && dbC.id === normalized.id);
+            if (original && original.thumbnail !== normalized.thumbnail) {
+              hasThumbnailCorrection = true;
             }
-          } catch (_) {
-            setCourses(COURSES);
+          });
+
+          // If there were format or thumbnail issues resolved, write back corrected version to DB
+          if (hasThumbnailCorrection) {
+            await saveCoursesToDB(normalizedDBCourses);
+            setCourses(normalizedDBCourses);
+          } else {
+            setCourses(normalizedDBCourses);
           }
         }
       } catch (err: any) {

@@ -9,9 +9,8 @@ import {
   updateProfile
 } from "firebase/auth";
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, getDoc, collection, getDocs, deleteDoc } from "firebase/firestore";
-import { Course, UserProgress } from "../types";
+import { UserProgress } from "../types";
 import { COURSES } from "../data/courses";
-import { normalizeCourse } from "../utils/courseHelper";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyCw12hW5NlxuMt2av2i5C23Ky-YWg2_mis",
@@ -172,25 +171,49 @@ export async function loginWithEmail(email: string, password: string) {
 // Courses Management Helpers in Firestore
 export async function getCoursesFromDB() {
   try {
+    // Try reading from Firestore 'courses' collection first
     const coursesCol = collection(db, "courses");
     const snapshot = await getDocs(coursesCol);
     if (!snapshot.empty) {
-      const dbCourses: any[] = [];
+      const courses: any[] = [];
       snapshot.forEach((docSnap) => {
-        dbCourses.push({ id: docSnap.id, ...docSnap.data() });
+        courses.push({ id: docSnap.id, ...docSnap.data() });
       });
-      return dbCourses.map((c) => normalizeCourse(c));
+      console.log("Successfully fetched courses from Firestore:", courses.length);
+      return courses;
     } else {
-      const metaSnap = await getDoc(doc(db, "configs", "courses_meta"));
-      if (metaSnap.exists() && metaSnap.data()?.initialized) {
+      // Check if DB was initialized previously
+      let wasInitialized = false;
+      try {
+        const metaSnap = await getDoc(doc(db, "configs", "courses_meta"));
+        if (metaSnap.exists() && metaSnap.data()?.initialized) {
+          wasInitialized = true;
+        }
+      } catch (_) {}
+
+      if (!wasInitialized) {
+        console.log("Firestore 'courses' collection is empty for the first time. Seeding default courses...");
+        try {
+          for (const course of COURSES) {
+            if (!course.id) continue;
+            const courseDocRef = doc(db, "courses", course.id);
+            const cleanCourse = cleanCourseForFirestore(course);
+            await setDoc(courseDocRef, cleanCourse);
+          }
+          await setDoc(doc(db, "configs", "courses_meta"), { initialized: true });
+          console.log("Seeded default courses to Firestore.");
+          return COURSES;
+        } catch (seedError: any) {
+          console.error("Failed to seed default courses to Firestore:", seedError);
+          return COURSES;
+        }
+      } else {
         return [];
       }
-      await saveCoursesToDB(COURSES);
-      return COURSES;
     }
   } catch (error: any) {
     console.warn("Error getting courses from Firestore:", error?.message || error);
-    return COURSES;
+    return [];
   }
 }
 
@@ -201,16 +224,10 @@ export async function getSingleCourseFromDB(courseId: string) {
     if (docSnap.exists()) {
       return { id: docSnap.id, ...docSnap.data() };
     }
-    const metaSnap = await getDoc(doc(db, "configs", "courses_meta"));
-    if (metaSnap.exists() && metaSnap.data()?.initialized) {
-      return null;
-    }
-    const staticMatch = COURSES.find((c) => c.id === courseId);
-    return staticMatch || null;
+    return null;
   } catch (err: any) {
     console.warn("Error getting single course from Firestore:", err?.message || err);
-    const staticMatch = COURSES.find((c) => c.id === courseId);
-    return staticMatch || null;
+    return null;
   }
 }
 

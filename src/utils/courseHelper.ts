@@ -85,7 +85,7 @@ export function normalizeCourse(c: any): Course {
     reviewCount: (c.reviewCount !== undefined && !isNaN(Number(c.reviewCount))) ? Number(c.reviewCount) : 1,
     duration: c.duration || '10h 30m',
     lessonsCount: (c.lessonsCount !== undefined && !isNaN(Number(c.lessonsCount)) && Number(c.lessonsCount) > 0) ? Number(c.lessonsCount) : totalLessons,
-    price: (c.price !== undefined && c.price !== null && String(c.price).trim() !== '') ? c.price : 'Free',
+    price: (c.price !== undefined && c.price !== null && c.price !== '') ? c.price : 49.99,
     thumbnail: (() => {
       const thumbStr = String(c.thumbnail || '').trim();
       if (thumbStr && (thumbStr.startsWith('http://') || thumbStr.startsWith('https://'))) {

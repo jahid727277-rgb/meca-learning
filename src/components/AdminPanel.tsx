@@ -368,26 +368,13 @@ export const COURSES: Course[] = ${formattedCourses};
     const processedTags = formTags.trim() ? formTags.split(',').map(t => t.trim()).filter(Boolean) : [];
     const totalLessons = formSyllabus.reduce((acc, sec) => acc + sec.lessons.length, 0);
 
-    let finalPrice: string | number = formPrice;
-    if (formPricingType === 'free') {
-      finalPrice = 'Free';
-    } else if (formPricingType === 'coming_soon') {
-      finalPrice = 'Coming Soon';
-    } else if (formPricingType === 'paid') {
-      if (!formPrice || String(formPrice).trim() === '') {
-        finalPrice = '৳2,500';
-      } else {
-        finalPrice = formPrice;
-      }
-    }
-
     const updatedOrNewCourse: Course = {
       id: editingCourse ? editingCourse.id : `course-${Date.now()}`,
       title: formTitle,
       description: formDescription,
       category: formCategory.trim() ? formCategory : '',
       level: formLevel,
-      price: finalPrice,
+      price: formPrice,
       thumbnail: formThumbnail,
       rating: editingCourse ? editingCourse.rating : 5.0,
       reviewCount: editingCourse ? editingCourse.reviewCount : 1,
