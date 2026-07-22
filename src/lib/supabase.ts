@@ -157,32 +157,6 @@ export async function updatePassword(newPassword: string) {
   }
 }
 
-export async function sendPasswordResetOTP(email: string) {
-  try {
-    const { data, error } = await supabase.auth.resetPasswordForEmail(email);
-    if (error) throw error;
-    return data;
-  } catch (error: any) {
-    console.error("Supabase resetPasswordForEmail error:", error);
-    throw error;
-  }
-}
-
-export async function verifyPasswordResetOTP(email: string, token: string) {
-  try {
-    const { data, error } = await supabase.auth.verifyOtp({
-      email,
-      token,
-      type: 'recovery'
-    });
-    if (error) throw error;
-    return data;
-  } catch (error: any) {
-    console.error("Supabase verifyOtp error:", error);
-    throw error;
-  }
-}
-
 // --- USER PROGRESS HELPERS ---
 
 export async function saveUserProgress(userId: string, progressData: UserProgress) {
