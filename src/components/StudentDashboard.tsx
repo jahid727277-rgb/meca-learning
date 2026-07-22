@@ -1,8 +1,7 @@
 import React, { useState } from 'react'; import { getEnrolledCourses } from '../utils/courseHelper';
 import { UserProgress, Course } from '../types';
 import { Award, BookOpen, ChevronRight, LogOut, Edit3, Check, KeyRound, User, Smartphone, Mail } from 'lucide-react';
-import { updateProfile, updatePassword } from 'firebase/auth';
-import { auth } from '../lib/firebase';
+import { updateProfileName, updatePassword } from '../lib/supabase';
 import CourseCard from './CourseCard';
 import ImageWithSkeleton from './ImageWithSkeleton';
 import { useNavigate } from 'react-router-dom';
@@ -56,12 +55,9 @@ export default function StudentDashboard({
     setUpdateLoading(true);
 
     try {
-      const currentUser = auth.currentUser;
-      if (!currentUser) throw new Error("কোনো লগইনকৃত ইউজার পাওয়া যায়নি।");
-
       // Update Display Name
       if (editName.trim() && editName.trim() !== user?.displayName) {
-        await updateProfile(currentUser, { displayName: editName.trim() });
+        await updateProfileName(editName.trim());
       }
 
       // Update Password if entered and different from current stored password
@@ -70,7 +66,7 @@ export default function StudentDashboard({
         if (newPassword.length < 6) {
           throw new Error("নতুন পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।");
         }
-        await updatePassword(currentUser, newPassword.trim());
+        await updatePassword(newPassword.trim());
         try {
           localStorage.setItem('current_user_pwd', newPassword.trim());
         } catch (e) {

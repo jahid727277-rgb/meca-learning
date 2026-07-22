@@ -19,7 +19,7 @@ import {
   User, Compass, Award, ExternalLink, Calendar, AlertTriangle, Copy, Check 
 } from 'lucide-react';
 import { 
-  auth, 
+  supabase, 
   signInWithGoogle, 
   logoutUser, 
   saveUserProgress, 
@@ -30,10 +30,8 @@ import {
   saveImageConfigs,
   clearAllUserEnrollments,
   cleanupUIDUsers,
-  db
-} from './lib/firebase';
-import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { onSnapshot, doc, getDoc, collection, setDoc } from 'firebase/firestore';
+  subscribeCourses
+} from './lib/supabase';
 import { AnimatePresence, motion } from 'framer-motion';
 import AuthModal from './components/AuthModal';
 import Footer, { footerContent } from './components/Footer';
@@ -62,7 +60,7 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [user, setUser] = useState<FirebaseUser | null>(() => {
+  const [user, setUser] = useState<any | null>(() => {
     try {
       const cached = localStorage.getItem('meca_cached_user');
       return cached ? JSON.parse(cached) : null;
@@ -110,47 +108,43 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [location.pathname]);
 
-  // Listen to Auth changes and load progress from Firebase with secure state initialization
+  // Listen to Auth changes and load progress from Supabase
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    // Initial check for cached user
+    const cachedUserStr = localStorage.getItem('meca_cached_user');
+    if (cachedUserStr) {
+      try {
+        const cached = JSON.parse(cachedUserStr);
+        setUser(cached);
+      } catch (e) {}
+    }
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setAuthLoading(false);
-      
+      const currentUser = session?.user;
+
       if (currentUser) {
-        // Check if user was already cached in localStorage before updating it
         const wasAlreadyLoggedIn = !!localStorage.getItem('meca_cached_user');
 
-        // User logged in
         const simpleUser = {
-          uid: currentUser.uid,
-          displayName: currentUser.displayName,
-          email: currentUser.email,
-          photoURL: currentUser.photoURL,
+          uid: currentUser.id,
+          displayName: currentUser.user_metadata?.display_name || currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0],
+          email: currentUser.email || '',
+          photoURL: currentUser.user_metadata?.avatar_url || null,
         };
-        setUser(currentUser);
+        setUser(simpleUser);
         localStorage.setItem('meca_cached_user', JSON.stringify(simpleUser));
 
-        // Auto cleanup old UID-based user records if current user is an admin
-        const ADMIN_EMAILS = ['jahid1882008@gmail.com'];
-        if (currentUser.email && ADMIN_EMAILS.includes(currentUser.email)) {
-          cleanupUIDUsers().catch(err => console.warn("Failed to auto-cleanup UID users:", err));
-        }
-
-        // Fetch user progress/enrolled courses securely
         try {
           setIsCloudProgressLoaded(false);
-          const cloudProgress = await getUserProgress(currentUser.uid);
-          
+          const cloudProgress = await getUserProgress(currentUser.id);
+
           if (cloudProgress) {
-            // Strictly prefer cloud progress over local progress when logging in
-            // This prevents "ghost" enrollments from previous local sessions from contaminating the account
             setProgress(cloudProgress);
           } else {
-            // New user with no cloud progress - save their current local session if it exists
-            // Only do this if they were NOT already logged in before (meaning this is a fresh first-time login, not a page refresh)
             if (!wasAlreadyLoggedIn && Object.keys(progress.enrolledCourses).length > 0) {
-              await saveUserProgress(currentUser.uid, progress);
+              await saveUserProgress(currentUser.id, progress);
             } else {
-              // Existing user whose progress was deleted in Firestore -> wipe local progress cache as well
               setProgress(DEFAULT_PROGRESS);
               localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(DEFAULT_PROGRESS));
             }
@@ -161,86 +155,35 @@ export default function App() {
           setIsCloudProgressLoaded(true);
         }
       } else {
-        // User logged out - clean up everything immediately
-        setUser(null);
-        setProgress(DEFAULT_PROGRESS);
-        setIsCloudProgressLoaded(false);
-        try {
-          localStorage.clear();
-          sessionStorage.clear();
-        } catch (e) {}
+        if (event === 'SIGNED_OUT') {
+          setUser(null);
+          setProgress(DEFAULT_PROGRESS);
+          setIsCloudProgressLoaded(false);
+          try {
+            localStorage.clear();
+            sessionStorage.clear();
+          } catch (e) {}
+        }
       }
     });
 
     return () => {
-      unsubscribe();
+      subscription.unsubscribe();
     };
   }, []);
 
-  // Fetch dynamic courses in real-time on website visit and listen for live changes
+  // Fetch dynamic courses in real-time from Supabase
   useEffect(() => {
-    // 1. Get branding configurations
     getImageConfigs().then((configs) => {
       setLogoUrl(mecaLearningLogo);
     }).catch(err => console.warn("Branding configs load error:", err));
 
-    // 2. Subscribe to real-time changes in Firestore 'courses' collection
-    const coursesCol = collection(db, "courses");
-    const unsubscribeCourses = onSnapshot(coursesCol, async (snapshot) => {
-      try {
-        if (snapshot.empty) {
-          setCourses([]);
-        } else {
-          // Mark as initialized if not already marked
-          try {
-            const metaRef = doc(db, "configs", "courses_meta");
-            setDoc(metaRef, { initialized: true }, { merge: true }).catch(() => {});
-          } catch (_) {}
-
-          const dbCourses: any[] = [];
-          snapshot.forEach((docSnap) => {
-            dbCourses.push({ id: docSnap.id, ...docSnap.data() });
-          });
-
-          // Normalize every course fetched to prevent Firestore array-to-object serialization issues
-          const normalizedDBCourses = dbCourses
-            .filter((c: any) => c && (c.id || c.title))
-            .map((c: any) => {
-              try {
-                return normalizeCourse(c);
-              } catch (e) {
-                console.error("Error normalizing course from Firestore:", e);
-                return null;
-              }
-            })
-            .filter(Boolean) as Course[];
-
-          setCourses(normalizedDBCourses);
-
-          // Detect if any normalized course had its thumbnail corrected/updated relative to the DB course
-          let hasThumbnailCorrection = false;
-          normalizedDBCourses.forEach((normalized) => {
-            const original = dbCourses.find((dbC: any) => dbC && dbC.id === normalized.id);
-            if (original && original.thumbnail !== normalized.thumbnail) {
-              hasThumbnailCorrection = true;
-            }
-          });
-
-          if (hasThumbnailCorrection) {
-            await saveCoursesToDB(normalizedDBCourses);
-          }
-        }
-      } catch (err: any) {
-        console.error("Error processing real-time courses updates:", err);
-      } finally {
-        setCoursesLoading(false);
-      }
-    }, (error) => {
-      console.warn("Firestore real-time courses listener failed:", error);
+    const unsubscribe = subscribeCourses((updatedCourses) => {
+      setCourses(updatedCourses);
       setCoursesLoading(false);
     });
 
-    return () => unsubscribeCourses();
+    return () => unsubscribe();
   }, []);
 
   // Process pending enrollments after login
@@ -705,11 +648,9 @@ export default function App() {
               <div className="rounded-2xl bg-amber-50/50 border border-amber-100/60 p-4.5 space-y-2.5 text-xs text-amber-900 font-semibold leading-relaxed">
                 <span className="text-[10px] uppercase font-black tracking-wider text-amber-800 block">কীভাবে ডোমেনগুলো যোগ করবেন:</span>
                 <ol className="list-decimal list-inside space-y-1.5 text-[11px] text-amber-800">
-                  <li>আপনার <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" className="underline text-orange-600 hover:text-orange-700 font-bold inline-flex items-center gap-0.5">Firebase Console <ExternalLink className="w-3 h-3 inline" /></a> এ যান।</li>
-                  <li>আপনার প্রোজেক্ট নির্বাচন করুন এবং বাম মেনু থেকে <strong className="font-bold">Authentication</strong> এ ক্লিক করুন।</li>
-                  <li>উপরে থাকা <strong className="font-bold">Settings</strong> ট্যাবে যান।</li>
-                  <li>বাম পাশের সাব-মেনু থেকে <strong className="font-bold">Authorized domains</strong> নির্বাচন করুন।</li>
-                  <li><strong className="font-bold">Add domain</strong> বাটনে ক্লিক করে উপরের ডোমেন দুটি একটি একটি করে যোগ করুন।</li>
+                  <li>আপনার <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer" className="underline text-emerald-600 hover:text-emerald-700 font-bold inline-flex items-center gap-0.5">Supabase Dashboard <ExternalLink className="w-3 h-3 inline" /></a> এ যান।</li>
+                  <li>আপনার প্রোজেক্ট নির্বাচন করুন এবং বাম মেনু থেকে <strong className="font-bold">Authentication &gt; URL Configuration</strong> এ ক্লিক করুন।</li>
+                  <li><strong className="font-bold">Site URL</strong> এবং <strong className="font-bold">Redirect URLs</strong> সেকশনে আপনার অ্যাপের URL যোগ করুন।</li>
                 </ol>
               </div>
             </div>

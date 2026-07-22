@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Course } from '../types';
 import CourseDetailsView from './CourseDetailsView';
-import { getSingleCourseFromDB } from '../lib/firebase';
+import { getSingleCourseFromDB } from '../lib/supabase';
 import { normalizeCourse } from '../utils/courseHelper';
 
 interface CourseDetailsRouteWrapperProps {

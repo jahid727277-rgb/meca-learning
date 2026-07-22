@@ -14,7 +14,7 @@ import {
 
 const mecaLearningLogo = 'https://res.cloudinary.com/djjhol6dg/image/upload/v1784080493/meca_learning_logo_a3yqec.png';
 
-import { syncAllCoursesToFirestore } from '../lib/firebase';
+import { syncAllCoursesToSupabase as syncAllCoursesToFirestore } from '../lib/supabase';
 
 interface AdminPanelProps {
   courses: Course[];

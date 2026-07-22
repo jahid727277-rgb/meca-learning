@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Course, UserProgress } from '../types';
 import Classroom from './Classroom';
-import { getSingleCourseFromDB } from '../lib/firebase';
+import { getSingleCourseFromDB } from '../lib/supabase';
 import { normalizeCourse } from '../utils/courseHelper';
 
 interface ClassroomRouteWrapperProps {
