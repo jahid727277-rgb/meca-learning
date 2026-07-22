@@ -3,7 +3,7 @@ import { Course } from '../types';
 import { 
   ArrowLeft, Clock, Award, ChevronDown, ChevronUp, Check, ShieldCheck, Play, HelpCircle, FileText 
 } from 'lucide-react';
-import { formatBDTPrice } from '../utils/currency';
+import { formatPrice } from '../utils/courseHelper';
 import YouTubePlayer from './YouTubePlayer';
 import CourseCard from './CourseCard';
 
@@ -82,8 +82,8 @@ export default function CourseDetailsView({ course, onBack, onEnroll, isEnrolled
         <div className="max-w-2xl mx-auto flex flex-row items-center justify-between gap-4 sm:gap-6 flex-nowrap w-full overflow-hidden">
           {/* Price Container */}
           <div className="flex flex-col pl-2 min-w-0 flex-shrink">
-            <span className="text-lg sm:text-xl md:text-2xl font-black text-white whitespace-nowrap truncate block" title={formatBDTPrice(course.price)}>
-              {formatBDTPrice(course.price)}
+            <span className="text-lg sm:text-xl md:text-2xl font-black text-white whitespace-nowrap truncate block" title={formatPrice(course.price)}>
+              {formatPrice(course.price)}
             </span>
           </div>
 

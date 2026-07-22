@@ -4,7 +4,7 @@ import { Course, Lesson, SyllabusSection, Level } from '../types';
 import ImageWithSkeleton from './ImageWithSkeleton';
 import YouTubePlayer from './YouTubePlayer';
 import CourseCard from './CourseCard';
-import { formatBDTPrice } from '../utils/currency';
+import { formatPrice } from '../utils/courseHelper';
 import { 
   Plus, Edit3, Trash2, Image, Link, Play, FileText, HelpCircle, 
   Save, RotateCcw, Check, CheckCircle, ArrowRight, Eye, EyeOff,
@@ -704,7 +704,7 @@ export const COURSES: Course[] = ${formattedCourses};
                 {/* Course Details */}
                 <div className="flex flex-col flex-1 p-5">
                   <div className="text-sm font-black text-orange-600 mb-1">
-                    {formatBDTPrice(course.price)}
+                    {formatPrice(course.price)}
                   </div>
                   <h3 className="text-base font-bold text-neutral-900 leading-snug mb-2 transition-colors">
                     {course.title}

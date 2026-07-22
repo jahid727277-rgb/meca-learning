@@ -4,6 +4,27 @@ import thumbAiAgents from '../assets/images/thumb_ai_agents_restored_17841971584
 import thumbAiAuto from '../assets/images/thumb_ai_auto_restored_1784197174333.jpg';
 
 /**
+ * Formats a price value with currency symbol (৳).
+ */
+export function formatPrice(price: string | number): string {
+  if (price === undefined || price === null || price === '') return '৳ ০';
+  if (typeof price === 'number') {
+    if (isNaN(price)) return '৳ ০';
+    return `৳ ${Math.round(price).toLocaleString('en-US')}`;
+  }
+  
+  const trimmed = String(price).trim();
+  const cleanNumericStr = trimmed.replace(/,/g, '');
+  const parsedNum = Number(cleanNumericStr);
+  
+  if (!isNaN(parsedNum) && cleanNumericStr !== '') {
+    return `৳ ${Math.round(parsedNum).toLocaleString('en-US')}`;
+  }
+  
+  return trimmed;
+}
+
+/**
  * Safely converts any value (including index-based objects from Firebase) to an array.
  */
 export function ensureArray<T>(val: any): T[] {
@@ -85,7 +106,7 @@ export function normalizeCourse(c: any): Course {
     reviewCount: (c.reviewCount !== undefined && !isNaN(Number(c.reviewCount))) ? Number(c.reviewCount) : 1,
     duration: c.duration || '10h 30m',
     lessonsCount: (c.lessonsCount !== undefined && !isNaN(Number(c.lessonsCount)) && Number(c.lessonsCount) > 0) ? Number(c.lessonsCount) : totalLessons,
-    price: (c.price !== undefined && c.price !== null && c.price !== '') ? c.price : 49.99,
+    price: (c.price !== undefined && c.price !== null && c.price !== '') ? c.price : 6000,
     thumbnail: (() => {
       const thumbStr = String(c.thumbnail || '').trim();
       if (thumbStr && (thumbStr.startsWith('http://') || thumbStr.startsWith('https://'))) {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Course, Enrollment } from '../types';
 import { Clock, BookOpen, Star, Sparkles, Award } from 'lucide-react';
-import { formatBDTPrice } from '../utils/currency';
+import { formatPrice } from '../utils/courseHelper';
 import ImageWithSkeleton from './ImageWithSkeleton';
 import { motion } from 'motion/react';
 
@@ -66,8 +66,8 @@ export default function CourseCard({
           ) : (
             <div className="flex items-center justify-between gap-3 flex-nowrap w-full overflow-hidden">
               <div className="flex flex-col min-w-0 flex-shrink">
-                <span className="text-lg font-black text-neutral-900 whitespace-nowrap truncate block" title={formatBDTPrice(course.price)}>
-                  {formatBDTPrice(course.price)}
+                <span className="text-lg font-black text-neutral-900 whitespace-nowrap truncate block" title={formatPrice(course.price)}>
+                  {formatPrice(course.price)}
                 </span>
               </div>
               <button

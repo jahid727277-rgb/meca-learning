@@ -14,7 +14,6 @@ import ImageWithSkeleton from './components/ImageWithSkeleton';
 import { COURSES } from './data/courses';
 import { normalizeCourse, getEnrolledCourses } from './utils/courseHelper';
 import { UserProgress, Enrollment, Course } from './types';
-import { formatBDTPrice } from './utils/currency';
 import { 
   ArrowLeft, Clock, BookOpen, Star, Sparkles, ShieldCheck, 
   User, Compass, Award, ExternalLink, Calendar, AlertTriangle, Copy, Check 
