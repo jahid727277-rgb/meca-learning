@@ -34,7 +34,7 @@ import {
   db
 } from './lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { onSnapshot, doc, getDoc, collection } from 'firebase/firestore';
+import { onSnapshot, doc, getDoc, collection, setDoc } from 'firebase/firestore';
 import { AnimatePresence, motion } from 'framer-motion';
 import AuthModal from './components/AuthModal';
 import Footer, { footerContent } from './components/Footer';
@@ -191,14 +191,35 @@ export default function App() {
     const unsubscribeCourses = onSnapshot(coursesCol, async (snapshot) => {
       try {
         if (snapshot.empty) {
-          // If Firestore is empty, seed it with the default courses
-          console.log("Firestore courses empty. Seeding defaults...");
-          await saveCoursesToDB(COURSES);
-          setCourses(COURSES);
+          // Check if DB was initialized previously
+          let wasInitialized = false;
+          try {
+            const metaSnap = await getDoc(doc(db, "configs", "courses_meta"));
+            if (metaSnap.exists() && metaSnap.data()?.initialized) {
+              wasInitialized = true;
+            }
+          } catch (mErr) {
+            console.warn("Error reading courses_meta config:", mErr);
+          }
+
+          if (!wasInitialized) {
+            console.log("Firestore courses empty for the first time. Seeding default courses...");
+            await saveCoursesToDB(COURSES);
+            setCourses(COURSES);
+          } else {
+            console.log("Firestore courses collection is empty (all courses deleted).");
+            setCourses([]);
+          }
         } else {
+          // Mark as initialized if not already marked
+          try {
+            const metaRef = doc(db, "configs", "courses_meta");
+            setDoc(metaRef, { initialized: true }, { merge: true }).catch(() => {});
+          } catch (_) {}
+
           const dbCourses: any[] = [];
-          snapshot.forEach((doc) => {
-            dbCourses.push({ id: doc.id, ...doc.data() });
+          snapshot.forEach((docSnap) => {
+            dbCourses.push({ id: docSnap.id, ...docSnap.data() });
           });
 
           // Normalize every course fetched to prevent Firestore array-to-object serialization issues
@@ -214,17 +235,6 @@ export default function App() {
             })
             .filter(Boolean) as Course[];
 
-          let hasNewCourses = false;
-          const updatedCourses = [...normalizedDBCourses];
-
-          for (const defaultCourse of COURSES) {
-            const exists = updatedCourses.some(c => c.id === defaultCourse.id);
-            if (!exists) {
-              updatedCourses.push(defaultCourse);
-              hasNewCourses = true;
-            }
-          }
-
           // Detect if any normalized course had its thumbnail corrected/updated relative to the DB course
           let hasThumbnailCorrection = false;
           normalizedDBCourses.forEach((normalized) => {
@@ -234,27 +244,21 @@ export default function App() {
             }
           });
 
+          // If there were format or thumbnail issues resolved, write back corrected version to DB
           if (hasThumbnailCorrection) {
-            hasNewCourses = true;
-          }
-
-          // If we found missing courses or there were format issues resolved, write back to DB
-          if (hasNewCourses || normalizedDBCourses.length !== dbCourses.length) {
-            await saveCoursesToDB(updatedCourses);
-            setCourses(updatedCourses);
+            await saveCoursesToDB(normalizedDBCourses);
+            setCourses(normalizedDBCourses);
           } else {
             setCourses(normalizedDBCourses);
           }
         }
       } catch (err: any) {
         console.error("Error processing real-time courses updates:", err);
-        setCourses(COURSES);
       } finally {
         setCoursesLoading(false);
       }
     }, (error) => {
       console.warn("Firestore real-time courses listener failed:", error);
-      setCourses(COURSES);
       setCoursesLoading(false);
     });
 

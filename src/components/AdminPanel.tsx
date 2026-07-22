@@ -438,10 +438,14 @@ export const COURSES: Course[] = ${formattedCourses};
 
   const confirmDeleteCourse = () => {
     if (!courseToDelete) return;
-    const filtered = courses.filter(c => c.id !== courseToDelete.id);
+    const deletedId = courseToDelete.id;
+    const filtered = courses.filter(c => c.id !== deletedId);
+    if (editingCourse?.id === deletedId) setEditingCourse(null);
+    if (editingSyllabusCourse?.id === deletedId) setEditingSyllabusCourse(null);
+    if (viewingCourseInfo?.id === deletedId) setViewingCourseInfo(null);
     onUpdateCourses(filtered);
     setCourseToDelete(null);
-    showStatus("কোর্সটি মুছে ফেলা হয়েছে!");
+    showStatus("কোর্সটি সফলভাবে মুছে ফেলা হয়েছে!");
   };
 
   const toggleSection = (id: string) => {

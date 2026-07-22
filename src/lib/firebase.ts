@@ -308,8 +308,17 @@ export async function saveCoursesToDB(courses: any[]) {
       const courseDocRef = doc(db, "courses", course.id);
       
       const cleanCourse = cleanCourseForFirestore(course);
-      await setDoc(courseDocRef, cleanCourse, { merge: true });
+      await setDoc(courseDocRef, cleanCourse);
     }
+
+    // Mark database as initialized so snapshot.empty won't re-seed default COURSES if all are deleted
+    try {
+      const metaRef = doc(db, "configs", "courses_meta");
+      await setDoc(metaRef, { initialized: true });
+    } catch (mErr) {
+      console.warn("Could not set courses_meta initialized flag:", mErr);
+    }
+
     console.log("Successfully saved courses to Firestore.");
   } catch (error: any) {
     console.warn("Error saving courses to Firestore:", error?.message || error);
@@ -382,13 +391,7 @@ export async function cleanupUIDUsers() {
 
 export async function syncAllCoursesToFirestore(courses: any[]) {
   try {
-    for (const course of courses) {
-      if (!course.id) continue;
-      const courseDocRef = doc(db, "courses", course.id);
-      
-      const cleanCourse = cleanCourseForFirestore(course);
-      await setDoc(courseDocRef, cleanCourse, { merge: true });
-    }
+    await saveCoursesToDB(courses);
     console.log("Successfully synced all courses to Firestore.");
     return true;
   } catch (error: any) {
