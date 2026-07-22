@@ -80,7 +80,7 @@ export default function App() {
   const [isCloudProgressLoaded, setIsCloudProgressLoaded] = useState<boolean>(false);
 
   // Dynamic courses and branding configurations loaded from Firebase Realtime Database
-  const [courses, setCourses] = useState<Course[]>(COURSES);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [logoUrl, setLogoUrl] = useState<string>(mecaLearningLogo);
   const [coursesLoading, setCoursesLoading] = useState<boolean>(true);
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
@@ -450,6 +450,7 @@ export default function App() {
               <PageTransition>
                 <CourseDetailsRouteWrapper
                   courses={courses}
+                  isLoading={coursesLoading}
                   onEnroll={handleEnrollAndStart}
                   isEnrolled={(id) => !!progress.enrolledCourses?.[id]}
                 />
@@ -459,6 +460,7 @@ export default function App() {
               <PageTransition>
                 <ClassroomRouteWrapper
                   courses={courses}
+                  isLoading={coursesLoading}
                   progress={progress}
                 />
               </PageTransition>
@@ -480,6 +482,7 @@ export default function App() {
                 <section id="catalog-section" className="bg-white pb-24 sm:pb-32 md:pb-40">
                   <CourseCatalog
                     courses={courses}
+                    isLoading={coursesLoading}
                     onSelectCourse={(courseId) => {
                       if (progress.enrolledCourses?.[courseId]) {
                         navigate(`/classroom/${courseId}`);

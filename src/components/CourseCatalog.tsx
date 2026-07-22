@@ -5,6 +5,7 @@ import { Search, RotateCcw } from 'lucide-react';
 
 interface CourseCatalogProps {
   courses: Course[];
+  isLoading?: boolean;
   onSelectCourse: (courseId: string) => void;
   onEnroll: (courseId: string) => void;
   onUnenroll?: (courseId: string) => void;
@@ -15,6 +16,7 @@ interface CourseCatalogProps {
 
 export default function CourseCatalog({
   courses,
+  isLoading = false,
   onSelectCourse,
   onEnroll,
   onUnenroll,
@@ -67,7 +69,24 @@ export default function CourseCatalog({
         {/* COURSES MAIN PANEL */}
         <div className="space-y-6">
 
-          {filteredCourses.length > 0 ? (
+          {isLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="bg-white rounded-2xl border border-neutral-100 overflow-hidden shadow-xs animate-pulse">
+                  <div className="w-full h-44 bg-neutral-200" />
+                  <div className="p-4 space-y-3">
+                    <div className="h-4 bg-neutral-200 rounded w-3/4" />
+                    <div className="h-3 bg-neutral-100 rounded w-full" />
+                    <div className="h-3 bg-neutral-100 rounded w-2/3" />
+                    <div className="pt-2 flex justify-between items-center">
+                      <div className="h-6 bg-neutral-200 rounded w-20" />
+                      <div className="h-8 bg-neutral-200 rounded-full w-24" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : filteredCourses.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {filteredCourses.map((course) => (
                 <CourseCard

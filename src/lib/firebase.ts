@@ -176,32 +176,44 @@ export async function getCoursesFromDB() {
     const snapshot = await getDocs(coursesCol);
     if (!snapshot.empty) {
       const courses: any[] = [];
-      snapshot.forEach((doc) => {
-        courses.push({ id: doc.id, ...doc.data() });
+      snapshot.forEach((docSnap) => {
+        courses.push({ id: docSnap.id, ...docSnap.data() });
       });
       console.log("Successfully fetched courses from Firestore:", courses.length);
       return courses;
     } else {
-      // Seed with initial static courses
-      console.log("Firestore 'courses' collection is empty. Seeding with default courses...");
+      // Check if DB was initialized previously
+      let wasInitialized = false;
       try {
-        for (const course of COURSES) {
-          if (!course.id) continue;
-          const courseDocRef = doc(db, "courses", course.id);
-          const cleanCourse = JSON.parse(JSON.stringify(course));
-          await setDoc(courseDocRef, cleanCourse);
+        const metaSnap = await getDoc(doc(db, "configs", "courses_meta"));
+        if (metaSnap.exists() && metaSnap.data()?.initialized) {
+          wasInitialized = true;
         }
-        console.log("Seeded default courses to Firestore.");
-        return COURSES;
-      } catch (seedError: any) {
-        console.error("Failed to seed default courses to Firestore:", seedError);
-        return COURSES;
+      } catch (_) {}
+
+      if (!wasInitialized) {
+        console.log("Firestore 'courses' collection is empty for the first time. Seeding default courses...");
+        try {
+          for (const course of COURSES) {
+            if (!course.id) continue;
+            const courseDocRef = doc(db, "courses", course.id);
+            const cleanCourse = cleanCourseForFirestore(course);
+            await setDoc(courseDocRef, cleanCourse);
+          }
+          await setDoc(doc(db, "configs", "courses_meta"), { initialized: true });
+          console.log("Seeded default courses to Firestore.");
+          return COURSES;
+        } catch (seedError: any) {
+          console.error("Failed to seed default courses to Firestore:", seedError);
+          return COURSES;
+        }
+      } else {
+        return [];
       }
     }
   } catch (error: any) {
     console.warn("Error getting courses from Firestore:", error?.message || error);
-    // If we're offline or it fails, fall back to COURSES so the app still functions
-    return COURSES;
+    return [];
   }
 }
 
