@@ -45,7 +45,8 @@ export default function ClassroomRouteWrapper({
 
   const activeCourse = existingCourse || directCourse;
   const enrollment = courseId ? progress.enrolledCourses?.[courseId] : undefined;
-  const showSkeleton = (isLoading || isDirectLoading) && !activeCourse;
+  const isFetching = isLoading || isDirectLoading || (!activeCourse && !hasAttemptedFetch);
+  const showSkeleton = isFetching && !activeCourse;
 
   if (showSkeleton) {
     return (

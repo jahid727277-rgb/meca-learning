@@ -81,7 +81,7 @@ export default function App() {
   // Dynamic courses and branding configurations loaded from Firebase
   const [courses, setCourses] = useState<Course[]>([]);
   const [logoUrl, setLogoUrl] = useState<string>(mecaLearningLogo);
-  const [coursesLoading, setCoursesLoading] = useState<boolean>(false);
+  const [coursesLoading, setCoursesLoading] = useState<boolean>(true);
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
   const [pendingEnrollCourseId, setPendingEnrollCourseId] = useState<string | null>(null);
   const [enrollPopupMessage, setEnrollPopupMessage] = useState<string | null>(null);

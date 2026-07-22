@@ -16,7 +16,7 @@ interface CourseDetailsViewProps {
 
 export default function CourseDetailsView({ course, onBack, onEnroll, isEnrolled }: CourseDetailsViewProps) {
   const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({
-    [course.syllabus[0]?.id || '']: true // expand the first section by default
+    [course?.syllabus?.[0]?.id || '']: true // expand the first section by default
   });
 
   const toggleSection = (sectionId: string) => {
@@ -27,9 +27,9 @@ export default function CourseDetailsView({ course, onBack, onEnroll, isEnrolled
   };
 
   // Default promo video URL for new courses
-  const promoVideoUrl = course.promoVideoUrl || 'https://youtu.be/example.video';
+  const promoVideoUrl = course?.promoVideoUrl || 'https://youtu.be/example.video';
 
-  const pStr = String(course.price).trim().toLowerCase();
+  const pStr = String(course?.price ?? '').trim().toLowerCase();
   const isFree = pStr.includes('free') || pStr === '0' || course.price === 0;
   const isNum = !isNaN(Number(pStr)) && pStr !== '';
   const isComingSoon = !isFree && !isNum;
