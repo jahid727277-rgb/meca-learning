@@ -273,15 +273,16 @@ export const COURSES: Course[] = ${formattedCourses};
     setFormLevel(course.level);
     
     // Set pricing type based on price value
-    const originalPrice = course.price !== undefined && course.price !== null ? course.price : '';
+    const originalPrice = course.price;
     setFormPrice(originalPrice);
     const pStr = String(originalPrice).trim().toLowerCase();
+    const isNum = !isNaN(Number(pStr)) && pStr !== '';
     if (pStr.includes('free') || pStr === '0' || originalPrice === 0) {
       setFormPricingType('free');
-    } else if (pStr.includes('coming') || pStr.includes('soon') || pStr.includes('upcoming')) {
-      setFormPricingType('coming_soon');
-    } else {
+    } else if (isNum) {
       setFormPricingType('paid');
+    } else {
+      setFormPricingType('coming_soon');
     }
 
     setFormThumbnail(course.thumbnail);
@@ -371,7 +372,7 @@ export const COURSES: Course[] = ${formattedCourses};
     if (formPricingType === 'free') {
       finalPrice = 'Free';
     } else if (formPricingType === 'coming_soon') {
-      finalPrice = formPrice && String(formPrice).trim() ? formPrice : 'Coming Soon';
+      finalPrice = 'Coming Soon';
     } else if (formPricingType === 'paid') {
       if (!formPrice || String(formPrice).trim() === '') {
         finalPrice = '৳2,500';
@@ -390,7 +391,7 @@ export const COURSES: Course[] = ${formattedCourses};
       thumbnail: formThumbnail,
       rating: editingCourse ? editingCourse.rating : 5.0,
       reviewCount: editingCourse ? editingCourse.reviewCount : 1,
-      duration: editingCourse?.duration || '10h 30m',
+      duration: '',
       lessonsCount: totalLessons,
       tags: processedTags,
       instructor: {
@@ -400,9 +401,7 @@ export const COURSES: Course[] = ${formattedCourses};
         bio: formInstructorBio.trim() ? formInstructorBio : ''
       },
       syllabus: formSyllabus,
-      comingSoonMessage: formComingSoonMessage,
-      promoVideoUrl: editingCourse?.promoVideoUrl,
-      detailsDescription: editingCourse?.detailsDescription
+      comingSoonMessage: formComingSoonMessage
     };
 
     let updatedCoursesList: Course[] = [];
@@ -850,10 +849,7 @@ export const COURSES: Course[] = ${formattedCourses};
                   type="button"
                   onClick={() => {
                     setFormPricingType('paid');
-                    const pStr = String(formPrice).trim().toLowerCase();
-                    if (!formPrice || pStr.includes('free') || pStr.includes('coming') || pStr.includes('soon')) {
-                      setFormPrice('৳2,500');
-                    }
+                    setFormPrice('');
                   }}
                   className={`py-2.5 text-xs font-black rounded-lg transition-all cursor-pointer ${
                     formPricingType === 'paid'
@@ -867,10 +863,8 @@ export const COURSES: Course[] = ${formattedCourses};
                   type="button"
                   onClick={() => {
                     setFormPricingType('coming_soon');
-                    const pStr = String(formPrice).trim().toLowerCase();
-                    if (!formPrice || pStr.includes('free') || !isNaN(Number(pStr)) || pStr.includes('৳')) {
-                      setFormPrice('Coming Soon');
-                    }
+                    setFormPrice('');
+                    setFormComingSoonMessage('');
                   }}
                   className={`py-2.5 text-xs font-black rounded-lg transition-all cursor-pointer ${
                     formPricingType === 'coming_soon'
