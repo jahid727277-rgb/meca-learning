@@ -78,8 +78,8 @@ export default function App() {
   const [copiedDomain, setCopiedDomain] = useState<string | null>(null);
   const [isCloudProgressLoaded, setIsCloudProgressLoaded] = useState<boolean>(false);
 
-  // Dynamic courses and branding configurations loaded from file and Firebase
-  const [courses, setCourses] = useState<Course[]>(COURSES);
+  // Dynamic courses and branding configurations loaded from Firebase
+  const [courses, setCourses] = useState<Course[]>([]);
   const [logoUrl, setLogoUrl] = useState<string>(mecaLearningLogo);
   const [coursesLoading, setCoursesLoading] = useState<boolean>(false);
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
@@ -189,9 +189,7 @@ export default function App() {
     const unsubscribeCourses = onSnapshot(coursesCol, async (snapshot) => {
       try {
         if (snapshot.empty) {
-          console.log("Firestore courses empty. Using COURSES from file.");
-          await saveCoursesToDB(COURSES).catch((e) => console.warn("Seeding courses error:", e));
-          setCourses(COURSES);
+          setCourses([]);
         } else {
           // Mark as initialized if not already marked
           try {
@@ -217,22 +215,7 @@ export default function App() {
             })
             .filter(Boolean) as Course[];
 
-          // Merge static file courses (COURSES) with DB courses (normalizedDBCourses)
-          // Ensures all file courses are always visible and any DB updates/additional courses are preserved
-          const courseMap = new Map<string, Course>();
-
-          // 1. Add all static file courses
-          COURSES.forEach((fileCourse) => {
-            courseMap.set(fileCourse.id, fileCourse);
-          });
-
-          // 2. Overlay Firestore courses (DB updates override or add new courses)
-          normalizedDBCourses.forEach((dbCourse) => {
-            courseMap.set(dbCourse.id, dbCourse);
-          });
-
-          const mergedCourses = Array.from(courseMap.values());
-          setCourses(mergedCourses);
+          setCourses(normalizedDBCourses);
 
           // Detect if any normalized course had its thumbnail corrected/updated relative to the DB course
           let hasThumbnailCorrection = false;
@@ -621,9 +604,9 @@ export default function App() {
                     localStorage.removeItem(LOCAL_STORAGE_KEY);
                     setProgress(DEFAULT_PROGRESS);
 
-                    // 3. Reset courses to default and save them to Firestore + RTDB
-                    await saveCoursesToDB(COURSES);
-                    setCourses(COURSES);
+                    // 3. Reset courses
+                    await saveCoursesToDB([]);
+                    setCourses([]);
 
                     // 4. Reset logo
                     await saveImageConfigs({ logoUrl: "" });

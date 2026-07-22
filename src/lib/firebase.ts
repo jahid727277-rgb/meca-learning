@@ -182,34 +182,7 @@ export async function getCoursesFromDB() {
       console.log("Successfully fetched courses from Firestore:", courses.length);
       return courses;
     } else {
-      // Check if DB was initialized previously
-      let wasInitialized = false;
-      try {
-        const metaSnap = await getDoc(doc(db, "configs", "courses_meta"));
-        if (metaSnap.exists() && metaSnap.data()?.initialized) {
-          wasInitialized = true;
-        }
-      } catch (_) {}
-
-      if (!wasInitialized) {
-        console.log("Firestore 'courses' collection is empty for the first time. Seeding default courses...");
-        try {
-          for (const course of COURSES) {
-            if (!course.id) continue;
-            const courseDocRef = doc(db, "courses", course.id);
-            const cleanCourse = cleanCourseForFirestore(course);
-            await setDoc(courseDocRef, cleanCourse);
-          }
-          await setDoc(doc(db, "configs", "courses_meta"), { initialized: true });
-          console.log("Seeded default courses to Firestore.");
-          return COURSES;
-        } catch (seedError: any) {
-          console.error("Failed to seed default courses to Firestore:", seedError);
-          return COURSES;
-        }
-      } else {
-        return [];
-      }
+      return [];
     }
   } catch (error: any) {
     console.warn("Error getting courses from Firestore:", error?.message || error);

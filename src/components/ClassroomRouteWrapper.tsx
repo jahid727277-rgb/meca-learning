@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Course, UserProgress } from '../types';
-import { COURSES } from '../data/courses';
 import Classroom from './Classroom';
 import { getSingleCourseFromDB } from '../lib/firebase';
 import { normalizeCourse } from '../utils/courseHelper';
@@ -20,7 +19,7 @@ export default function ClassroomRouteWrapper({
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
 
-  const existingCourse = courses.find((c) => c.id === courseId) || COURSES.find((c) => c.id === courseId);
+  const existingCourse = courses.find((c) => c.id === courseId);
   const [directCourse, setDirectCourse] = useState<Course | null>(null);
   const [isDirectLoading, setIsDirectLoading] = useState<boolean>(false);
   const [hasAttemptedFetch, setHasAttemptedFetch] = useState<boolean>(false);
