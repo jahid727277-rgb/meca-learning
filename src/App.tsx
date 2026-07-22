@@ -79,10 +79,10 @@ export default function App() {
   const [copiedDomain, setCopiedDomain] = useState<string | null>(null);
   const [isCloudProgressLoaded, setIsCloudProgressLoaded] = useState<boolean>(false);
 
-  // Dynamic courses and branding configurations loaded from Firebase Realtime Database
-  const [courses, setCourses] = useState<Course[]>([]);
+  // Dynamic courses and branding configurations loaded from file and Firebase
+  const [courses, setCourses] = useState<Course[]>(COURSES);
   const [logoUrl, setLogoUrl] = useState<string>(mecaLearningLogo);
-  const [coursesLoading, setCoursesLoading] = useState<boolean>(true);
+  const [coursesLoading, setCoursesLoading] = useState<boolean>(false);
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
   const [pendingEnrollCourseId, setPendingEnrollCourseId] = useState<string | null>(null);
   const [enrollPopupMessage, setEnrollPopupMessage] = useState<string | null>(null);
@@ -186,30 +186,13 @@ export default function App() {
     }).catch(err => console.warn("Branding configs load error:", err));
 
     // 2. Subscribe to real-time changes in Firestore 'courses' collection
-    setCoursesLoading(true);
     const coursesCol = collection(db, "courses");
     const unsubscribeCourses = onSnapshot(coursesCol, async (snapshot) => {
       try {
         if (snapshot.empty) {
-          // Check if DB was initialized previously
-          let wasInitialized = false;
-          try {
-            const metaSnap = await getDoc(doc(db, "configs", "courses_meta"));
-            if (metaSnap.exists() && metaSnap.data()?.initialized) {
-              wasInitialized = true;
-            }
-          } catch (mErr) {
-            console.warn("Error reading courses_meta config:", mErr);
-          }
-
-          if (!wasInitialized) {
-            console.log("Firestore courses empty for the first time. Seeding default courses...");
-            await saveCoursesToDB(COURSES);
-            setCourses(COURSES);
-          } else {
-            console.log("Firestore courses collection is empty (all courses deleted).");
-            setCourses([]);
-          }
+          console.log("Firestore courses empty. Using COURSES from file.");
+          await saveCoursesToDB(COURSES).catch((e) => console.warn("Seeding courses error:", e));
+          setCourses(COURSES);
         } else {
           // Mark as initialized if not already marked
           try {
@@ -235,6 +218,23 @@ export default function App() {
             })
             .filter(Boolean) as Course[];
 
+          // Merge static file courses (COURSES) with DB courses (normalizedDBCourses)
+          // Ensures all file courses are always visible and any DB updates/additional courses are preserved
+          const courseMap = new Map<string, Course>();
+
+          // 1. Add all static file courses
+          COURSES.forEach((fileCourse) => {
+            courseMap.set(fileCourse.id, fileCourse);
+          });
+
+          // 2. Overlay Firestore courses (DB updates override or add new courses)
+          normalizedDBCourses.forEach((dbCourse) => {
+            courseMap.set(dbCourse.id, dbCourse);
+          });
+
+          const mergedCourses = Array.from(courseMap.values());
+          setCourses(mergedCourses);
+
           // Detect if any normalized course had its thumbnail corrected/updated relative to the DB course
           let hasThumbnailCorrection = false;
           normalizedDBCourses.forEach((normalized) => {
@@ -244,12 +244,8 @@ export default function App() {
             }
           });
 
-          // If there were format or thumbnail issues resolved, write back corrected version to DB
           if (hasThumbnailCorrection) {
             await saveCoursesToDB(normalizedDBCourses);
-            setCourses(normalizedDBCourses);
-          } else {
-            setCourses(normalizedDBCourses);
           }
         }
       } catch (err: any) {

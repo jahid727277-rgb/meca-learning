@@ -69,7 +69,7 @@ export default function CourseCatalog({
         {/* COURSES MAIN PANEL */}
         <div className="space-y-6">
 
-          {isLoading ? (
+          {isLoading && courses.length === 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {[1, 2, 3, 4].map((i) => (
                 <div key={i} className="bg-white rounded-2xl border border-neutral-100 overflow-hidden shadow-xs animate-pulse">

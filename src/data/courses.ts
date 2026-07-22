@@ -18,7 +18,7 @@ export const COURSES: Course[] = [
     reviewCount: 342,
     duration: '10h 15m',
     lessonsCount: 5,
-    price: 49.99,
+    price: 6000,
     thumbnail: 'https://res.cloudinary.com/djjhol6dg/image/upload/v1784463289/1784463216153_jtoqbe.png',
     tags: ['Prompt Engineering', 'Generative AI', 'LLMs', 'Gemini'],
     instructor: {
@@ -121,7 +121,7 @@ To extract the highest quality responses from LLMs, engineers rely on structured
     reviewCount: 189,
     duration: '14h 30m',
     lessonsCount: 6,
-    price: 79.99,
+    price: 9600,
     thumbnail: 'https://res.cloudinary.com/djjhol6dg/image/upload/v1783557260/1000263343-clean_fuquye.png',
     tags: ['AI Agents', 'LangGraph', 'Autogen', 'Function Calling'],
     instructor: {
@@ -191,7 +191,7 @@ An AI agent is only as powerful as the tools it can access. Modern APIs (like Ge
     reviewCount: 521,
     duration: '18h 45m',
     lessonsCount: 6,
-    price: 99.99,
+    price: 12000,
     thumbnail: 'https://res.cloudinary.com/djjhol6dg/image/upload/v1783557260/1000263336-clean_nzjfqt.png',
     tags: ['Automation', 'APIs', 'Node.js', 'Workflows', 'n8n'],
     instructor: {

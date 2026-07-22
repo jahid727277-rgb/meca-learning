@@ -22,7 +22,7 @@ export default function ImageWithSkeleton({
   onLoad,
   ...props
 }: ImageWithSkeletonProps) {
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [hasError, setHasError] = useState<boolean>(false);
   const imgRef = useRef<HTMLImageElement>(null);
 
@@ -32,11 +32,7 @@ export default function ImageWithSkeleton({
       return;
     }
 
-    setIsLoading(true);
-    setHasError(false);
-
-    // If image has already loaded (e.g. from cache or instantly loaded)
-    if (imgRef.current && imgRef.current.complete) {
+    if (imgRef.current && !imgRef.current.complete) {
       setIsLoading(false);
     }
   }, [src]);
