@@ -217,6 +217,20 @@ export async function getCoursesFromDB() {
   }
 }
 
+export async function getSingleCourseFromDB(courseId: string) {
+  try {
+    const courseDocRef = doc(db, "courses", courseId);
+    const docSnap = await getDoc(courseDocRef);
+    if (docSnap.exists()) {
+      return { id: docSnap.id, ...docSnap.data() };
+    }
+    return null;
+  } catch (err: any) {
+    console.warn("Error getting single course from Firestore:", err?.message || err);
+    return null;
+  }
+}
+
 export function cleanCourseForFirestore(course: any) {
   if (!course) return course;
   const c = { ...course };
