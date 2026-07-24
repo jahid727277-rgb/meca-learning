@@ -108,6 +108,27 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [location.pathname]);
 
+  // Automatically trigger AuthModal if URL contains reset params or if reset mode is stored
+  useEffect(() => {
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const modeParam = searchParams.get('mode');
+      const emailParam = searchParams.get('email') || searchParams.get('reset_email');
+      const savedEmail = localStorage.getItem('meca_reset_otp_email');
+
+      if (
+        modeParam === 'reset_password' || 
+        searchParams.has('reset_otp') || 
+        searchParams.has('reset_email') || 
+        (savedEmail && localStorage.getItem('meca_reset_otp_mode') === 'forgot_otp')
+      ) {
+        setShowAuthModal(true);
+      }
+    } catch (e) {
+      console.warn("Reset URL check error:", e);
+    }
+  }, []);
+
   // Listen to Auth changes and load progress from Supabase
   useEffect(() => {
     // Initial check for cached user

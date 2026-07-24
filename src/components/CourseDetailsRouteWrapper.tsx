@@ -101,13 +101,13 @@ export default function CourseDetailsRouteWrapper({ courses, isLoading = false, 
   if (!activeCourse) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center p-8 text-center space-y-4">
-        <h2 className="text-xl font-black text-neutral-800">কোর্সটি পাওয়া যায়নি</h2>
-        <p className="text-sm text-neutral-500 font-medium">সম্ভবত এটি মুছে ফেলা হয়েছে অথবা ভুল ইউআরএল ব্যবহার করা হয়েছে।</p>
+        <h2 className="text-xl font-black text-neutral-800">Course not found</h2>
+        <p className="text-sm text-neutral-500 font-medium">Maybe it has been deleted or an incorrect URL was used.</p>
         <button
           onClick={() => navigate('/')}
           className="px-6 py-2.5 bg-neutral-900 text-white rounded-xl text-xs font-bold hover:bg-neutral-800 transition-all cursor-pointer"
         >
-          হোম পেজে ফিরে যান
+          Go back to Home Page
         </button>
       </div>
     );

@@ -122,6 +122,155 @@ export async function loginWithEmail(email: string, password: string) {
   }
 }
 
+function extractSupabaseErrorMessage(err: any): string {
+  if (!err) return '';
+  if (typeof err === 'string') return err;
+  if (err.message && typeof err.message === 'string' && err.message !== '{}' && err.message !== '[object Object]') {
+    return err.message;
+  }
+  if (err.error_description && typeof err.error_description === 'string') {
+    return err.error_description;
+  }
+  if (err.msg && typeof err.msg === 'string') {
+    return err.msg;
+  }
+  try {
+    const propNames = Object.getOwnPropertyNames(err);
+    if (propNames.length > 0) {
+      const obj: Record<string, any> = {};
+      for (const name of propNames) {
+        obj[name] = err[name];
+      }
+      if (obj.message) return String(obj.message);
+      if (obj.error_description) return String(obj.error_description);
+    }
+  } catch (e) {
+    // ignore
+  }
+  if (err.status) {
+    return `Supabase Auth Error (HTTP ${err.status})`;
+  }
+  return '';
+}
+
+export async function sendPasswordResetOTP(email: string) {
+  try {
+    const redirectUrl = typeof window !== 'undefined' ? window.location.origin : '';
+    
+    // Call resetPasswordForEmail so Supabase uses the custom "Reset Password" email template
+    const { data: resetData, error: resetErr } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: redirectUrl
+    });
+
+    if (!resetErr) {
+      return resetData;
+    }
+
+    const resetMsg = extractSupabaseErrorMessage(resetErr);
+    console.warn("Supabase resetPasswordForEmail info:", resetMsg, resetErr);
+    const resetMsgLower = resetMsg.toLowerCase();
+
+    if (
+      resetMsgLower.includes('user not found') || 
+      resetMsgLower.includes('not_found') ||
+      resetMsgLower.includes('signups not allowed') ||
+      resetMsgLower.includes('signup disabled')
+    ) {
+      throw new Error("This email address is not registered in the system.");
+    }
+
+    if (resetMsgLower.includes('rate limit') || resetMsgLower.includes('60 seconds') || resetMsgLower.includes('security purposes') || resetMsgLower.includes('over_email_send_rate_limit')) {
+      if (resetMsg && (resetMsg.toLowerCase().includes('security purposes') || resetMsg.toLowerCase().includes('request this after'))) {
+        throw new Error(resetMsg);
+      }
+      throw new Error("For security reasons, Supabase limits OTP requests. Please wait a few seconds before requesting again.");
+    }
+
+    if (resetMsg) {
+      if (resetMsg.toLowerCase().includes('error sending') || resetMsg.toLowerCase().includes('smtp')) {
+        throw new Error("Sorry server down");
+      }
+      throw new Error(resetMsg);
+    }
+
+    throw new Error("Sorry server down");
+  } catch (error: any) {
+    console.warn("Supabase sendPasswordResetOTP caught error:", error?.message || error);
+    let msg = typeof error === 'string' ? error : error?.message;
+    if (!msg || typeof msg !== 'string' || msg === '{}' || msg === '[object Object]' || msg.includes('SMTP') || msg.includes('Unable to send') || msg.includes('error sending')) {
+      msg = "Sorry server down";
+    }
+    throw new Error(msg);
+  }
+}
+
+export async function verifyOTPAndResetPassword(email: string, otpToken: string, newPassword: string) {
+  try {
+    // 1. Verify OTP code
+    let verifiedUser = null;
+    let verifyError: any = null;
+
+    // Try 'recovery' type first
+    const { data: recData, error: recErr } = await supabase.auth.verifyOtp({
+      email,
+      token: otpToken,
+      type: 'recovery'
+    });
+
+    if (!recErr && recData?.user) {
+      verifiedUser = recData.user;
+    } else {
+      verifyError = recErr;
+      // Fallback try 'email' type
+      const { data: emailData, error: emailErr } = await supabase.auth.verifyOtp({
+        email,
+        token: otpToken,
+        type: 'email'
+      });
+
+      if (!emailErr && emailData?.user) {
+        verifiedUser = emailData.user;
+        verifyError = null;
+      } else {
+        verifyError = emailErr || recErr;
+      }
+    }
+
+    if (verifyError || !verifiedUser) {
+      const msg = verifyError?.message || "Invalid or expired OTP code.";
+      throw new Error(msg);
+    }
+
+    // 2. Update user's password
+    const { data: updateData, error: updateErr } = await supabase.auth.updateUser({
+      password: newPassword
+    });
+
+    if (updateErr) {
+      throw new Error(updateErr.message || "Failed to update password.");
+    }
+
+    const finalUser = updateData.user || verifiedUser;
+
+    const formattedUser = {
+      uid: finalUser.id,
+      email: finalUser.email || email,
+      displayName: finalUser.user_metadata?.display_name || finalUser.user_metadata?.full_name || email.split('@')[0],
+      photoURL: finalUser.user_metadata?.avatar_url || null
+    };
+
+    localStorage.setItem('meca_cached_user', JSON.stringify(formattedUser));
+    return formattedUser;
+  } catch (error: any) {
+    console.warn("Supabase verifyOTPAndResetPassword error:", error);
+    let msg = error?.message || (typeof error === 'string' ? error : '');
+    if (!msg || msg === '{}' || typeof msg === 'object') {
+      msg = "Invalid or expired OTP code. Please check the code and try again.";
+    }
+    throw new Error(msg);
+  }
+}
+
 export async function updateProfileName(displayName: string) {
   try {
     const { data, error } = await supabase.auth.updateUser({
