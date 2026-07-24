@@ -297,10 +297,23 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
       console.warn("Reset Password error:", err);
       let msg = err?.message || (typeof err === 'string' ? err : '');
       const msgLower = msg.toLowerCase();
-      if (msgLower.includes("invalid") || msgLower.includes("expired") || msgLower.includes("otp")) {
-        msg = "ভুল বা মেয়াদোত্তীর্ণ ওটিপি (OTP) কোড। অনুগ্রহ করে কোডটি পরীক্ষা করে আবার চেষ্টা করুন।";
+      if (msgLower.includes("different") || msgLower.includes("same password") || msgLower.includes("old password")) {
+        const cachedUserStr = localStorage.getItem('meca_cached_user');
+        let userObj = null;
+        if (cachedUserStr) {
+          try { userObj = JSON.parse(cachedUserStr); } catch (e) {}
+        }
+        if (userObj) {
+          onSuccess(userObj);
+        }
+        handleModalClose();
+        return;
+      }
+
+      if (msgLower.includes("invalid") || msgLower.includes("expired") || msgLower.includes("otp") || msgLower.includes("token")) {
+        msg = "Invalid or expired OTP code. Please check the code and try again.";
       } else if (!msg || msg === '{}' || typeof msg === 'object') {
-        msg = "ভুল বা মেয়াদোত্তীর্ণ ওটিপি (OTP) কোড। অনুগ্রহ করে কোডটি দিয়ে আবার চেষ্টা করুন।";
+        msg = "Invalid or expired OTP code. Please check the code and try again.";
       }
       setError(msg);
     } finally {
@@ -503,7 +516,7 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
                   value={otpToken}
                   onChange={(e) => setOtpToken(e.target.value)}
                   className="w-full pl-11 pr-4 py-3 bg-white border-2 border-neutral-900 text-neutral-900 text-sm font-mono font-bold tracking-widest rounded-2xl focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-neutral-900 transition-all placeholder:font-sans placeholder:tracking-normal placeholder:text-neutral-400 placeholder:font-normal"
-                  placeholder="Enter OTP"
+                  placeholder="Enter 4-digit OTP"
                 />
               </div>
             </div>

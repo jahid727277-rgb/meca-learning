@@ -242,15 +242,26 @@ export async function verifyOTPAndResetPassword(email: string, otpToken: string,
     }
 
     // 2. Update user's password
+    let finalUser = verifiedUser;
     const { data: updateData, error: updateErr } = await supabase.auth.updateUser({
       password: newPassword
     });
 
     if (updateErr) {
-      throw new Error(updateErr.message || "Failed to update password.");
+      const errLower = (updateErr.message || "").toLowerCase();
+      if (
+        errLower.includes("different") || 
+        errLower.includes("same password") || 
+        errLower.includes("old password") ||
+        errLower.includes("should be different")
+      ) {
+        console.log("Password unchanged/same as old password; proceeding with verified login session.");
+      } else {
+        throw new Error(updateErr.message || "Failed to update password.");
+      }
+    } else if (updateData?.user) {
+      finalUser = updateData.user;
     }
-
-    const finalUser = updateData.user || verifiedUser;
 
     const formattedUser = {
       uid: finalUser.id,
@@ -264,7 +275,10 @@ export async function verifyOTPAndResetPassword(email: string, otpToken: string,
   } catch (error: any) {
     console.warn("Supabase verifyOTPAndResetPassword error:", error);
     let msg = error?.message || (typeof error === 'string' ? error : '');
-    if (!msg || msg === '{}' || typeof msg === 'object') {
+    const msgLower = msg.toLowerCase();
+    if (msgLower.includes("invalid") || msgLower.includes("expired") || msgLower.includes("otp") || msgLower.includes("token")) {
+      msg = "Invalid or expired OTP code. Please check the code and try again.";
+    } else if (!msg || msg === '{}' || typeof msg === 'object') {
       msg = "Invalid or expired OTP code. Please check the code and try again.";
     }
     throw new Error(msg);
