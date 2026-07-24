@@ -516,7 +516,7 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
                   value={otpToken}
                   onChange={(e) => setOtpToken(e.target.value)}
                   className="w-full pl-11 pr-4 py-3 bg-white border-2 border-neutral-900 text-neutral-900 text-sm font-mono font-bold tracking-widest rounded-2xl focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-neutral-900 transition-all placeholder:font-sans placeholder:tracking-normal placeholder:text-neutral-400 placeholder:font-normal"
-                  placeholder="Enter 4-digit OTP"
+                  placeholder="Enter OTP"
                 />
               </div>
             </div>
